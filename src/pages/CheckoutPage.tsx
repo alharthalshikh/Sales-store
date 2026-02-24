@@ -230,10 +230,13 @@ export default function CheckoutPage() {
         if (!form.name || !form.phone) { showToast('يرجى ملء الاسم ورقم الهاتف', 'error'); return; }
         if (!acceptTerms) { showToast('يرجى الموافقة على الشروط والأحكام أولاً', 'error'); return; }
 
+        // إنشاء رقم طلب تقني متوافق مع قاعدة البيانات (UUID) ورقم مكتبي للقراءة (Human Readable)
+        const technicalId = crypto.randomUUID();
+        const displayId = `ORD-${Date.now().toString().slice(-6)}`;
         const earnedPoints = s.loyaltyEnabled ? Math.floor(finalTotal / (s.loyaltyPointsRatio || 10)) : 0;
 
         const order: Order = {
-            id: `ORD-${Date.now()}`,
+            id: technicalId, // يجب أن يكون UUID ليتوافق مع قاعدة البيانات
             items: state.cart,
             total: finalTotal,
             customerName: form.name,
@@ -258,7 +261,7 @@ export default function CheckoutPage() {
         const couponLine = appliedCoupon ? `\n🎟️ كوبون: ${appliedCoupon.name} (-${couponDiscount.toFixed(0)} ${s.currencySymbol})` : '';
 
         const shippingLine = shippingFee > 0 ? `\n🚚 رسوم التوصيل: ${shippingFee.toFixed(0)} ${s.currencySymbol}${distance > 0 ? ` (${distance.toFixed(1)} كم)` : ''}` : '';
-        const message = `🛒 طلب جديد من ${s.storeName}\n\n📋 رقم الطلب: ${order.id}\n\n👤 الاسم: ${form.name}\n📱 الهاتف: ${form.phone}\n📍 العنوان: ${form.address || 'غير محدد'}\n${location ? `📌 الموقع: https://www.google.com/maps?q=${location.lat},${location.lng}` : ''}\n\n📦 المنتجات:\n${itemsList}${couponLine}${shippingLine}\n\n💰 المجموع الكلي: ${finalTotal.toFixed(0)} ${s.currencySymbol}\n🎁 نقاط الولاء المكتسبة: ${earnedPoints}\n\n📝 ملاحظات: ${form.notes || 'لا يوجد'}`;
+        const message = `🛒 طلب جديد من ${s.storeName}\n\n📋 رقم الطلب: ${displayId}\n\n👤 الاسم: ${form.name}\n📱 الهاتف: ${form.phone}\n📍 العنوان: ${form.address || 'غير محدد'}\n${location ? `📌 الموقع: https://www.google.com/maps?q=${location.lat},${location.lng}` : ''}\n\n📦 المنتجات:\n${itemsList}${couponLine}${shippingLine}\n\n💰 المجموع الكلي: ${finalTotal.toFixed(0)} ${s.currencySymbol}\n🎁 نقاط الولاء المكتسبة: ${earnedPoints}\n\n📝 ملاحظات: ${form.notes || 'لا يوجد'}`;
 
         if (sendVia === 'whatsapp') {
             window.open(`https://wa.me/${s.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
@@ -266,7 +269,7 @@ export default function CheckoutPage() {
             dispatch({
                 type: 'ADD_MESSAGE',
                 message: {
-                    id: `MSG-${Date.now()}`,
+                    id: crypto.randomUUID(), // UUID متوافق
                     senderName: form.name,
                     senderPhone: form.phone,
                     content: message,

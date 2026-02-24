@@ -242,9 +242,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'DELETE_CATEGORY':
                     await supabase.from('categories').delete().eq('id', action.categoryId);
                     break;
-                case 'ADD_ORDER':
-                    await supabase.from('orders').upsert(orderToDb(action.order));
+                case 'ADD_ORDER': {
+                    const { error } = await supabase.from('orders').upsert(orderToDb(action.order));
+                    if (error) console.error('❌ فشل حفظ الطلب في السيرفر:', error.message, error.details);
+                    else console.log('✅ تم حفظ الطلب برقم:', action.order.id);
                     break;
+                }
                 case 'UPDATE_ORDER_STATUS': {
                     console.log(`📦 جاري تحديث الطلب ${action.orderId} إلى: ${action.status}`);
                     const { error } = await supabase.from('orders').update({ status: action.status }).eq('id', action.orderId);
@@ -299,9 +302,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     if (error) console.error('❌ فشل حذف الطلب من السيرفر:', error.message);
                     break;
                 }
-                case 'ADD_MESSAGE':
-                    await supabase.from('messages').upsert(messageToDb(action.message));
+                case 'ADD_MESSAGE': {
+                    const { error } = await supabase.from('messages').upsert(messageToDb(action.message));
+                    if (error) console.error('❌ فشل حفظ الرسالة في السيرفر:', error.message);
                     break;
+                }
                 case 'MARK_MESSAGE_READ':
                     await supabase.from('messages').update({ status: 'read' }).eq('id', action.messageId);
                     break;
