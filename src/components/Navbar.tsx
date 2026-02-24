@@ -55,7 +55,7 @@ export default function Navbar() {
 
                     <div className="navbar-actions">
                         {/* Theme Switcher */}
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative' }} className="hide-mobile">
                             <button
                                 className="nav-icon-btn"
                                 onClick={() => setShowThemeMenu(!showThemeMenu)}
@@ -102,7 +102,7 @@ export default function Navbar() {
                             )}
                         </div>
 
-                        <Link to="/favorites" className="nav-icon-btn" title="المفضلة">
+                        <Link to="/favorites" className="nav-icon-btn hide-mobile" title="المفضلة">
                             <Heart size={20} />
                             {state.unreadFavoritesCount > 0 && (
                                 <span className="badge">{state.unreadFavoritesCount}</span>
@@ -126,7 +126,7 @@ export default function Navbar() {
                                     <User size={20} />
                                 </Link>
                                 {isAdmin && (
-                                    <Link to="/admin" className="nav-icon-btn" title="لوحة التحكم" style={{ color: 'var(--accent)' }}>
+                                    <Link to="/admin" className="nav-icon-btn hide-mobile" title="لوحة التحكم" style={{ color: 'var(--accent)' }}>
                                         <Shield size={20} />
                                     </Link>
                                 )}

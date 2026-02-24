@@ -1177,6 +1177,18 @@ export default function AdminPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                     <button className="btn btn-danger" onClick={() => {
+                        if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف كافة المنتجات والأصناف والبنرات؟ سيتم مسحها من السيرفر تماماً!')) {
+                            dispatch({ type: 'CLEAR_PRODUCTS' });
+                            dispatch({ type: 'CLEAR_CATEGORIES' });
+                            dispatch({ type: 'DELETE_BANNER', bannerId: 'b1' });
+                            dispatch({ type: 'DELETE_BANNER', bannerId: 'b2' });
+                            showToast('تم حذف كافة المنتجات والأصناف والبنرات بنجاح 🗑️', 'warning');
+                        }
+                    }} style={{ background: '#7f1d1d' }}>
+                        <Trash2 size={16} /> إفراغ المنتجات والأصناف (بياناتي)
+                    </button>
+
+                    <button className="btn btn-danger" onClick={() => {
                         if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف كافة الطلبات وتصفيير المبيعات؟')) {
                             dispatch({ type: 'CLEAR_ORDERS' });
                             showToast('تم حذف كافة الطلبات بنجاح 🗑️', 'warning');

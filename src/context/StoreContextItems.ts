@@ -123,6 +123,8 @@ export type StoreAction =
     | { type: 'CLEAR_REVIEWS' }
     | { type: 'CLEAR_CUSTOMERS' }
     | { type: 'CLEAR_REWARDS' }
+    | { type: 'CLEAR_PRODUCTS' }
+    | { type: 'CLEAR_CATEGORIES' }
     | { type: 'FACTORY_RESET' }
     | { type: 'LOGOUT' }
     | { type: 'CLEAR_USER_MESSAGES'; userId?: string; phone?: string }

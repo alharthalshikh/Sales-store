@@ -168,20 +168,14 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
             return { ...state, customers: [] };
         case 'CLEAR_REWARDS':
             return { ...state, rewards: [] };
+        case 'CLEAR_PRODUCTS':
+            return { ...state, products: [] };
+        case 'CLEAR_CATEGORIES':
+            return { ...state, categories: [] };
         case 'FACTORY_RESET':
             return {
-                ...state,
-                products: [],
-                categories: [],
-                orders: [],
-                customers: [],
-                messages: [],
-                reviews: [],
-                discountRules: [],
-                banners: [],
-                rewards: [],
-                settings: defaultSettings,
-                bannedCustomers: []
+                ...initialState,
+                isDataInitialized: true
             };
         case 'LOGOUT':
             return {
@@ -474,6 +468,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'CLEAR_REWARDS':
                     await supabase.from('rewards').delete().neq('id', '_none_');
                     break;
+                case 'CLEAR_PRODUCTS':
+                    await supabase.from('products').delete().neq('id', '_none_');
+                    break;
+                case 'CLEAR_CATEGORIES':
+                    await supabase.from('categories').delete().neq('id', '_none_');
+                    break;
                 case 'FACTORY_RESET':
                     await Promise.all([
                         supabase.from('products').delete().neq('id', '_none_'),
@@ -487,6 +487,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         supabase.from('rewards').delete().neq('id', '_none_'),
                         supabase.from('settings').upsert(settingsToDb(defaultSettings))
                     ]);
+                    localStorage.clear(); // مسح شامل لكل الكاش المحلي
                     break;
             }
         } catch (err) {
