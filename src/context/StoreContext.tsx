@@ -905,6 +905,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (state.settings.primaryColor) document.documentElement.style.setProperty('--primary', state.settings.primaryColor);
         if (state.settings.accentColor) document.documentElement.style.setProperty('--accent', state.settings.accentColor);
         document.title = state.settings.storeName || themeConfig.storeName;
+
+        // تحديث أيقونة الموقع (Favicon) ديناميكياً لتظهر في شريط العنوان
+        if (state.settings.storeLogo) {
+            let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.head.appendChild(link);
+            }
+            link.href = state.settings.storeLogo;
+            // دعم الأيقونة لنظام أبل أيضاً
+            let appleIcon = document.querySelector("link[rel*='apple-touch-icon']") as HTMLLinkElement;
+            if (!appleIcon) {
+                appleIcon = document.createElement('link');
+                appleIcon.rel = 'apple-touch-icon';
+                document.head.appendChild(appleIcon);
+            }
+            appleIcon.href = state.settings.storeLogo;
+        }
     }, [state.settings]);
 
     const cartTotal = state.cart.reduce((sum, item) => {
