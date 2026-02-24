@@ -148,6 +148,22 @@ const queryClient = new QueryClient({
 });
 
 import { ThemeProvider } from './context/ThemeContext';
+import { useStore } from './hooks/useStore';
+import SplashScreen from './components/SplashScreen';
+
+function RootContent() {
+    const { state } = useStore();
+
+    if (!state.isDataInitialized) {
+        return <SplashScreen />;
+    }
+
+    return (
+        <BrowserRouter>
+            <MainContent />
+        </BrowserRouter>
+    );
+}
 
 export default function App() {
     return (
@@ -155,9 +171,7 @@ export default function App() {
             <ThemeProvider>
                 <AuthProvider>
                     <StoreProvider>
-                        <BrowserRouter>
-                            <MainContent />
-                        </BrowserRouter>
+                        <RootContent />
                     </StoreProvider>
                 </AuthProvider>
             </ThemeProvider>

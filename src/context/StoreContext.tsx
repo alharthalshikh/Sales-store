@@ -837,13 +837,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             // الإشارة بأن البيانات تم تحميلها بنجاح لمنع الكتابة فوقها ببيانات فارغة
             loadedState.isDataInitialized = true;
 
-            if (hasRemoteData || true) { // نسمح بالتحميل دائماً طالما اكتملت المحاولة
-                if (!loadedState.products || loadedState.products.length === 0) loadedState.products = defaultProducts;
-                if (!loadedState.categories || loadedState.categories.length === 0) loadedState.categories = defaultCategories;
-
-                baseDispatch({ type: 'LOAD_STATE', state: loadedState });
-                seedSupabase();
-            }
+            baseDispatch({ type: 'LOAD_STATE', state: loadedState });
+            seedSupabase();
         } catch (err) {
             console.error('❌ Error in loadFromSupabase:', err);
             baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
