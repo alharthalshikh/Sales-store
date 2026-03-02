@@ -142,8 +142,8 @@ export interface StoreContextType {
 export const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const initialState: StoreState = {
-    products: defaultProducts,
-    categories: defaultCategories,
+    products: [],
+    categories: [],
     cart: [],
     favorites: [],
     orders: [],
@@ -151,10 +151,7 @@ export const initialState: StoreState = {
     reviews: [],
     discountRules: [],
     customers: [],
-    banners: [
-        { id: 'b1', title: 'عروض حصرية', subtitle: 'خصومات تصل لـ 50% على منتجات مختارة', image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=1920&q=80', link: '/products', active: true },
-        { id: 'b2', title: 'منتجات جديدة', subtitle: 'اكتشف آخر ما وصلنا', image: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=1920&q=80', link: '/products', active: true },
-    ],
+    banners: [],
     settings: defaultSettings,
     bannedCustomers: [],
     isCartOpen: false,

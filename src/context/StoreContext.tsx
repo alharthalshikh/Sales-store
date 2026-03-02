@@ -711,6 +711,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (supabaseInitialized.current) return;
         supabaseInitialized.current = true;
+
+        // مسح الكاش القديم لمنع ظهور البيانات التجريبية
+        const CACHE_VERSION = 'v3';
+        const currentVersion = localStorage.getItem('store-cache-version');
+        if (currentVersion !== CACHE_VERSION) {
+            localStorage.removeItem('store-state-v2');
+            localStorage.removeItem('store-cart');
+            localStorage.removeItem('store-favorites');
+            localStorage.setItem('store-cache-version', CACHE_VERSION);
+            console.log('🧹 تم مسح الكاش القديم');
+        }
+
         loadFromSupabase();
     }, []);
 
