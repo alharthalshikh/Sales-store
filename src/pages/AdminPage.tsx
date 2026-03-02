@@ -89,6 +89,8 @@ export default function AdminPage() {
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [currentReview, setCurrentReview] = useState<Review | null>(null);
     const [reviewReplyText, setReviewReplyText] = useState('');
+    const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | Order['status']>('all');
+    const [orderSearchQuery, setOrderSearchQuery] = useState('');
 
     // Helper data
     const [lastSeenOrders, setLastSeenOrders] = useState<number>(() => {
@@ -413,7 +415,7 @@ export default function AdminPage() {
                     <table className="admin-table">
                         <thead><tr><th>رقم</th><th>العميل</th><th>المجموع</th><th>الحالة</th><th>التاريخ</th></tr></thead>
                         <tbody>
-                            {state.orders.slice(0, 5).map(order => (
+                            {[...state.orders].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5).map(order => (
                                 <tr key={order.id}>
                                     <td style={{ fontWeight: 600 }}>{order.id}</td>
                                     <td>{order.customerName}</td>
@@ -546,57 +548,91 @@ export default function AdminPage() {
         </div>
     );
 
-    const renderOrders = () => (
-        <div>
-            <div className="admin-section-header">
-                <h3>📦 إدارة الطلبات ({state.orders.length})</h3>
-            </div>
-            {state.orders.length === 0 ? (
-                <div className="empty-state">لا توجد طلبات بعد</div>
-            ) : (
-                <div className="admin-table-container">
-                    <table className="admin-table">
-                        <thead><tr><th>رقم</th><th>العميل</th><th>الهاتف</th><th>المنتجات</th><th>المجموع</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
-                        <tbody>
-                            {state.orders.map(order => (
-                                <tr key={order.id}>
-                                    <td style={{ fontWeight: 600 }}>{order.id}</td>
-                                    <td>{order.customerName}</td>
-                                    <td dir="ltr" style={{ fontSize: '0.85rem' }}>{order.customerPhone}</td>
-                                    <td>
-                                        <div style={{ fontSize: '0.82rem' }}>
-                                            {order.items.slice(0, 2).map(item => <div key={item.product.id}>{item.product.name} ×{item.quantity}</div>)}
-                                            {order.items.length > 2 && <div style={{ color: 'var(--text-light)' }}>+{order.items.length - 2} آخر</div>}
-                                        </div>
-                                    </td>
-                                    <td style={{ color: 'var(--accent)', fontWeight: 700 }}>{order.total.toFixed(0)} {s.currencySymbol}</td>
-                                    <td><span className={`status - badge status - ${order.status} `}>{statusLabels[order.status]}</span></td>
-                                    <td style={{ fontSize: '0.82rem', color: 'var(--text-light)' }}>{formatDate(order.createdAt)}</td>
-                                    <td>
-                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                            <select
-                                                value={order.status}
-                                                onChange={e => { dispatch({ type: 'UPDATE_ORDER_STATUS', orderId: order.id, status: e.target.value as any }); showToast('تم تحديث الحالة ✅'); }}
-                                                style={{ padding: '6px 10px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.8rem' }}
-                                            >
-                                                <option value="pending">قيد الانتظار</option>
-                                                <option value="processing">جاري التجهيز</option>
-                                                <option value="shipped">تم الشحن</option>
-                                                <option value="delivered">تم التوصيل</option>
-                                                <option value="cancelled">ملغي</option>
-                                            </select>
-                                            <button className="btn btn-secondary btn-small" title="طباعة فاتورة" onClick={() => generateInvoicePDF(order, state.settings)}><FileText size={14} /></button>
-                                            <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف هذا الطلب؟')) { dispatch({ type: 'DELETE_ORDER', orderId: order.id }); showToast('تم الحذف', 'warning'); } }}><Trash2 size={14} /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+    const renderOrders = () => {
+        const filteredOrders = state.orders.filter(o => {
+            const matchesStatus = orderStatusFilter === 'all' || o.status === orderStatusFilter;
+            const q = orderSearchQuery.toLowerCase();
+            const matchesSearch = o.customerName.toLowerCase().includes(q) ||
+                o.customerPhone.includes(q) ||
+                o.id.toLowerCase().includes(q);
+            return matchesStatus && matchesSearch;
+        }).sort((a, b) => b.createdAt - a.createdAt);
+
+        return (
+            <div>
+                <div className="admin-section-header">
+                    <h3>📦 إدارة الطلبات ({filteredOrders.length})</h3>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <input
+                            type="text"
+                            placeholder="بحث بالاسم أو الهاتف أو الرقم..."
+                            value={orderSearchQuery}
+                            onChange={e => setOrderSearchQuery(e.target.value)}
+                            style={{ padding: '8px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9rem', width: 220 }}
+                        />
+                        <select
+                            value={orderStatusFilter}
+                            onChange={e => setOrderStatusFilter(e.target.value as any)}
+                            style={{ padding: '8px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9rem' }}
+                        >
+                            <option value="all">كل الحالات</option>
+                            <option value="pending">قيد الانتظار</option>
+                            <option value="processing">جاري التجهيز</option>
+                            <option value="shipped">تم الشحن</option>
+                            <option value="delivered">تم التوصيل</option>
+                            <option value="cancelled">ملغي</option>
+                        </select>
+                    </div>
                 </div>
-            )}
-        </div>
-    );
+                {filteredOrders.length === 0 ? (
+                    <div className="empty-state">لا توجد طلبات تطابق البحث</div>
+                ) : (
+                    <div className="admin-table-container">
+                        <table className="admin-table">
+                            <thead><tr><th>رقم</th><th>العميل</th><th>الهاتف</th><th>المنتجات</th><th>المجموع</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+                            <tbody>
+                                {filteredOrders.map(order => (
+                                    <tr key={order.id}>
+                                        <td style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--accent)', fontFamily: 'monospace' }} title={order.id}>
+                                            {order.id.split('-')[0].toUpperCase()}
+                                        </td>
+                                        <td>{order.customerName}</td>
+                                        <td dir="ltr" style={{ fontSize: '0.85rem' }}>{order.customerPhone}</td>
+                                        <td>
+                                            <div style={{ fontSize: '0.82rem' }}>
+                                                {order.items.slice(0, 2).map(item => <div key={item.product.id}>{item.product.name} ×{item.quantity}</div>)}
+                                                {order.items.length > 2 && <div style={{ color: 'var(--text-light)' }}>+{order.items.length - 2} آخر</div>}
+                                            </div>
+                                        </td>
+                                        <td style={{ color: 'var(--accent)', fontWeight: 700 }}>{order.total.toFixed(0)} {s.currencySymbol}</td>
+                                        <td><span className={`status-badge status-${order.status}`}>{statusLabels[order.status]}</span></td>
+                                        <td style={{ fontSize: '0.82rem', color: 'var(--text-light)' }}>{formatDate(order.createdAt)}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                                <select
+                                                    value={order.status}
+                                                    onChange={e => { dispatch({ type: 'UPDATE_ORDER_STATUS', orderId: order.id, status: e.target.value as any }); showToast('تم تحديث الحالة ✅'); }}
+                                                    style={{ padding: '6px 10px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', fontSize: '0.8rem' }}
+                                                >
+                                                    <option value="pending">قيد الانتظار</option>
+                                                    <option value="processing">جاري التجهيز</option>
+                                                    <option value="shipped">تم الشحن</option>
+                                                    <option value="delivered">تم التوصيل</option>
+                                                    <option value="cancelled">ملغي</option>
+                                                </select>
+                                                <button className="btn btn-secondary btn-small" title="طباعة فاتورة" onClick={() => generateInvoicePDF(order, state.settings)}><FileText size={14} /></button>
+                                                <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف هذا الطلب؟')) { dispatch({ type: 'DELETE_ORDER', orderId: order.id }); showToast('تم الحذف', 'warning'); } }}><Trash2 size={14} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const renderCustomers = () => (
         <AdminUsers />

@@ -4,6 +4,7 @@ import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
 import { Star, RotateCcw, ChevronLeft, Package, Clock, Hash } from 'lucide-react';
 import { Order } from '../types';
+import { showToast } from '../components/ToastContainer';
 
 export default function OrdersPage() {
     const navigate = useNavigate();
@@ -211,7 +212,19 @@ export default function OrdersPage() {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-light)', fontSize: '0.82rem' }}>
                                                     <Clock size={14} />
-                                                    {formatDate(order.createdAt)} | <Hash size={12} /> {order.id.slice(-7)}
+                                                    {formatDate(order.createdAt)} | <Hash size={12} />
+                                                    <span
+                                                        title="اضغط لنسخ رقم الطلب"
+                                                        style={{ color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', background: 'rgba(200,134,10,0.1)', padding: '2px 6px', borderRadius: '4px' }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const fullId = `ORD-${order.id.split('-')[0].toUpperCase()}`;
+                                                            navigator.clipboard.writeText(fullId);
+                                                            showToast('تم نسخ رقم الطلب ✅');
+                                                        }}
+                                                    >
+                                                        ORD-{order.id.split('-')[0].toUpperCase()}
+                                                    </span>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '2px' }}>
                                                     {[1, 2, 3, 4, 5].map(star => (

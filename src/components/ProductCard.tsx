@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Heart, ShoppingCart, Eye } from 'lucide-react';
 import { Product } from '../types';
 import { useStore } from '../hooks/useStore';
@@ -50,18 +50,28 @@ export default function ProductCard({ product, index = 0 }: Props) {
         dispatch({ type: 'SET_CART_OPEN', isOpen: true });
     };
 
+    const [searchParams] = useSearchParams();
+    const highlightId = searchParams.get('highlight');
+    const isHighlighted = highlightId === String(product.id);
+
     return (
-        <div className="product-card" style={{ animationDelay: `${index * 0.1}s` }}>
+        <div
+            id={`product-${product.id}`}
+            className={`product-card ${index % 2 === 0 ? 'animate-in' : 'animate-in-alt'} ${isHighlighted ? 'product-highlight' : ''}`}
+            style={{ animationDelay: `${index * 0.1}s` }}
+        >
             <div className="product-card-image">
-                <img
-                    src={product.image}
-                    alt={product.name}
-                    loading="lazy"
-                    onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://placehold.co/400x300?text=No+Image';
-                    }}
-                />
+                <Link to={`/products?category=${product.categoryId}&highlight=${product.id}`} style={{ width: '100%', height: '100%', display: 'block' }}>
+                    <img
+                        src={product.image}
+                        alt={product.name}
+                        loading="lazy"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://placehold.co/400x300?text=No+Image';
+                        }}
+                    />
+                </Link>
                 {discount > 0 && (
                     <span className="discount-badge">خصم {Math.round(discount)}%</span>
                 )}
@@ -94,7 +104,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
                 {category && (
                     <div className="product-card-category">{category.icon} {category.name}</div>
                 )}
-                <Link to={`/product/${product.id}`}>
+                <Link to={`/products?category=${product.categoryId}&highlight=${product.id}`}>
                     <h3 className="product-card-name">{product.name}</h3>
                 </Link>
                 <div className="product-card-rating">

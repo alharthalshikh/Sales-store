@@ -12,23 +12,54 @@ export default function ProductsPage() {
 
     const filteredProducts = useMemo(() => {
         let filtered = [...state.products];
-        if (activeCategory !== 'all') {
-            filtered = filtered.filter(p => p.categoryId === activeCategory);
+
+        console.log('🔍 Filtering:', {
+            total: filtered.length,
+            activeCategory,
+            searchQuery,
+            sortBy
+        });
+
+        if (activeCategory && activeCategory !== 'all') {
+            const normalizedCategory = String(activeCategory).trim();
+            filtered = filtered.filter(p => {
+                const pCatId = String(p.categoryId || '').trim();
+                return pCatId === normalizedCategory;
+            });
+            console.log('📂 After Category Filter:', filtered.length);
         }
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase();
+
+        if (searchQuery && searchQuery.trim()) {
+            const q = searchQuery.toLowerCase().trim();
             filtered = filtered.filter(p =>
-                p.name.includes(q) || p.nameEn.toLowerCase().includes(q) || p.description.includes(q)
+                (p.name || '').toLowerCase().includes(q) ||
+                (p.nameEn || '').toLowerCase().includes(q) ||
+                (p.description || '').toLowerCase().includes(q)
             );
+            console.log('🔎 After Search Filter:', filtered.length);
         }
+
         switch (sortBy) {
-            case 'price-low': filtered.sort((a, b) => a.price - b.price); break;
-            case 'price-high': filtered.sort((a, b) => b.price - a.price); break;
-            case 'rating': filtered.sort((a, b) => b.rating - a.rating); break;
+            case 'price-low': filtered.sort((a, b) => (a.price || 0) - (b.price || 0)); break;
+            case 'price-high': filtered.sort((a, b) => (b.price || 0) - (a.price || 0)); break;
+            case 'rating': filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
             case 'featured': filtered.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)); break;
         }
+
         return filtered;
     }, [activeCategory, searchQuery, sortBy, state.products]);
+
+    React.useEffect(() => {
+        const highlightId = searchParams.get('highlight');
+        if (highlightId) {
+            setTimeout(() => {
+                const element = document.getElementById(`product-${highlightId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 500);
+        }
+    }, [searchParams]);
 
     return (
         <div className="page">
@@ -43,9 +74,10 @@ export default function ProductsPage() {
                         الكل ({state.products.length})
                     </button>
                     {state.categories.map(cat => {
-                        const count = state.products.filter(p => p.categoryId === cat.id).length;
+                        const catIdStr = String(cat.id).trim();
+                        const count = state.products.filter(p => String(p.categoryId || '').trim() === catIdStr).length;
                         return (
-                            <button key={cat.id} className={`filter-btn ${activeCategory === cat.id ? 'active' : ''}`} onClick={() => setSearchParams({ category: cat.id })}>
+                            <button key={cat.id} className={`filter-btn ${String(activeCategory).trim() === catIdStr ? 'active' : ''}`} onClick={() => setSearchParams({ category: cat.id })}>
                                 {cat.icon} {cat.name} ({count})
                             </button>
                         );

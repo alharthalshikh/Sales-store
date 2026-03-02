@@ -215,7 +215,7 @@ export function rewardToDb(r: LoyaltyReward) {
 }
 export function dbToProduct(row: any): Product {
     return {
-        id: row.id,
+        id: String(row.id),
         name: row.name,
         nameEn: row.name_en || '',
         description: row.description || '',
@@ -224,7 +224,7 @@ export function dbToProduct(row: any): Product {
         discount: row.discount || undefined,
         image: row.image || '',
         images: row.images || [],
-        categoryId: row.category_id || '',
+        categoryId: row.category_id ? String(row.category_id) : '',
         weight: row.weight || '',
         tags: row.tags || [],
         specifications: row.specifications || {},
@@ -249,7 +249,7 @@ export function productToDb(p: Product) {
 }
 
 export function dbToCategory(row: any): Category {
-    return { id: row.id, name: row.name, nameEn: row.name_en || '', description: row.description || '', icon: row.icon || '📦', image: row.image || '' };
+    return { id: String(row.id), name: row.name, nameEn: row.name_en || '', description: row.description || '', icon: row.icon || '📦', image: row.image || '' };
 }
 
 export function categoryToDb(c: Category) {

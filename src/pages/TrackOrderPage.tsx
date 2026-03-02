@@ -16,11 +16,15 @@ export default function TrackOrderPage() {
     const [cloudOrders, setCloudOrders] = useState<Order[]>([]);
 
     const query = searchQuery.trim();
-    const isOrderId = query.startsWith('ORD-');
+    const isOrderId = query.toUpperCase().startsWith('ORD-');
+    const idPart = isOrderId ? query.split('-')[1]?.toLowerCase() : '';
 
-    const localOrders = state.orders.filter(o =>
-        isOrderId ? o.id === query : o.customerPhone === query
-    );
+    const localOrders = state.orders.filter(o => {
+        if (isOrderId) {
+            return o.id.toLowerCase().startsWith(idPart);
+        }
+        return o.customerPhone === query;
+    });
 
     const customerOrders = searched
         ? [...new Map([...localOrders, ...cloudOrders].map(o => [o.id, o])).values()]
@@ -53,8 +57,9 @@ export default function TrackOrderPage() {
             // البحث في سحابة Supabase
             let supabaseQuery = supabase.from('orders').select('*');
 
-            if (isOrderId) {
-                supabaseQuery = supabaseQuery.eq('id', query);
+            if (isOrderId && idPart) {
+                // البحث عن الطلب الذي يبدأ معرفه بهذا الجزء (Case-insensitive)
+                supabaseQuery = supabaseQuery.ilike('id', `${idPart}%`);
             } else {
                 supabaseQuery = supabaseQuery.eq('customer_phone', query);
             }
@@ -191,7 +196,7 @@ export default function TrackOrderPage() {
                                                 {/* رأس الطلب */}
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                                                     <div>
-                                                        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>رقم الطلب: {order.id}</div>
+                                                        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>رقم الطلب: ORD-{order.id.split('-')[0].toUpperCase()}</div>
                                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '4px' }}>
                                                             {formatDate(order.createdAt)}
                                                         </div>
@@ -264,7 +269,8 @@ export default function TrackOrderPage() {
                                                             })}
                                                         </div>
                                                     </div>
-                                                )}
+                                                )
+                                                }
 
                                                 {/* تفاصيل المنتجات */}
                                                 <div style={{
@@ -288,7 +294,7 @@ export default function TrackOrderPage() {
                                                 </div>
 
                                                 {/* نقاط الولاء المكتسبة */}
-                                                {order.loyaltyPointsEarned && order.loyaltyPointsEarned > 0 && (
+                                                {(order.loyaltyPointsEarned ?? 0) > 0 && (
                                                     <div style={{
                                                         marginTop: '12px', textAlign: 'center',
                                                         fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600,
@@ -317,6 +323,6 @@ export default function TrackOrderPage() {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

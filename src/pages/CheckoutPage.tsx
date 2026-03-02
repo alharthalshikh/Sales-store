@@ -232,7 +232,7 @@ export default function CheckoutPage() {
 
         // إنشاء رقم طلب تقني متوافق مع قاعدة البيانات (UUID) ورقم مكتبي للقراءة (Human Readable)
         const technicalId = crypto.randomUUID();
-        const displayId = `ORD-${Date.now().toString().slice(-6)}`;
+        const displayId = `ORD-${technicalId.split('-')[0].toUpperCase()}`;
         const earnedPoints = s.loyaltyEnabled ? Math.floor(finalTotal / (s.loyaltyPointsRatio || 10)) : 0;
 
         const order: Order = {
