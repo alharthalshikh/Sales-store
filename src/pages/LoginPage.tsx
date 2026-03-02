@@ -9,7 +9,7 @@ import { useStore } from '../hooks/useStore';
 import LogoRenderer from '../components/LogoRenderer';
 
 export default function LoginPage() {
-  const { login, signUp, isAdmin, loading } = useAuth();
+  const { login, signUp, user, isAdmin, loading } = useAuth();
   const { state } = useStore();
   const navigate = useNavigate();
   const s = state.settings;
@@ -32,10 +32,15 @@ export default function LoginPage() {
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
-    if (isAdmin && !loading) {
-      navigate('/admin');
+    if (!loading && user) {
+      // لو المستخدم مسجل دخول بالفعل، نرجعه بدون ما نحفظ صفحة اللوقن في التاريخ
+      if (isAdmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     }
-  }, [isAdmin, loading, navigate]);
+  }, [user, isAdmin, loading, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,7 +56,7 @@ export default function LoginPage() {
     if (mode === 'login') {
       const result = await login(formData.email, formData.password);
       if (result.success) {
-        navigate('/');
+        navigate('/', { replace: true });
       } else {
         setError(result.error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
@@ -268,17 +273,28 @@ export default function LoginPage() {
         }
 
         .auth-logo-box {
-          width: 120px; height: 120px;
+          min-width: 120px;
+          height: 120px;
+          padding: 0 24px;
           background: var(--surface);
-          border-radius: 24px;
+          border-radius: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 20px;
-          font-size: 2.8rem;
-          box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-          border: 1px solid var(--border);
-          backdrop-filter: blur(10px);
+          margin-bottom: 24px;
+          font-size: 3.2rem;
+          box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+          border: 1.5px solid var(--border);
+          backdrop-filter: blur(15px);
+          white-space: nowrap;
+          overflow: hidden;
+          max-width: 90%;
+        }
+
+        .auth-logo-box img {
+          max-height: 85px;
+          width: auto;
+          object-fit: contain;
         }
 
         .auth-brand-name {
@@ -355,20 +371,21 @@ export default function LoginPage() {
 
         .auth-form-new input {
           width: 100%;
-          background: var(--surface);
+          background: rgba(30, 23, 16, 0.6);
           border: 1.5px solid var(--border);
           border-radius: 14px;
           padding: 14px 18px;
           color: var(--text);
           font-size: 1rem;
-          transition: all 0.3s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .auth-form-new input:focus {
           outline: none;
-          border-color: var(--accent);
-          background: var(--surface-hover);
-          box-shadow: 0 0 0 3px var(--accent-glow);
+          border-color: var(--primary);
+          background: rgba(42, 32, 24, 0.9);
+          box-shadow: 0 0 0 4px var(--accent-glow);
+          transform: translateY(-1px);
         }
         .pass-input-box {
           position: relative;
@@ -385,16 +402,21 @@ export default function LoginPage() {
           transform: translateY(-50%);
           background: none;
           border: none;
-          color: var(--text-light);
+          color: var(--text-secondary);
           cursor: pointer;
           display: flex;
           align-items: center;
+          transition: color 0.3s;
+        }
+
+        .btn-eye-toggle:hover {
+          color: var(--accent);
         }
 
         .auth-submit-btn {
           width: 100%;
-          background: var(--accent);
-          color: #000;
+          background: var(--gradient);
+          color: #1a1408;
           border: none;
           border-radius: 14px;
           padding: 16px;
@@ -403,16 +425,17 @@ export default function LoginPage() {
           cursor: pointer;
           transition: all 0.3s;
           margin-top: 10px;
+          box-shadow: 0 4px 15px var(--accent-glow);
         }
 
         .auth-submit-btn:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 10px 20px var(--accent-glow);
-          filter: brightness(1.1);
+          box-shadow: 0 12px 25px var(--accent-glow);
+          filter: brightness(1.15);
         }
 
         .auth-submit-btn:disabled {
-          opacity: 0.7;
+          opacity: 0.5;
           cursor: not-allowed;
           filter: grayscale(1);
         }
@@ -434,10 +457,16 @@ export default function LoginPage() {
         .switch-btn {
           background: none;
           border: none;
-          color: var(--accent);
+          color: var(--primary-light);
           font-weight: 700;
           cursor: pointer;
           margin-right: 8px;
+          transition: color 0.3s;
+        }
+
+        .switch-btn:hover {
+          color: var(--accent);
+          text-decoration: underline;
         }
 
         .auth-msg {
@@ -468,12 +497,16 @@ export default function LoginPage() {
           margin-top: 35px;
           color: var(--text-light);
           text-decoration: none;
-          font-size: 0.9rem;
-          transition: color 0.3s;
+          font-size: 0.95rem;
+          transition: all 0.3s;
+          padding: 8px;
+          border-radius: 10px;
         }
 
         .auth-back-link:hover {
-          color: var(--text-secondary);
+          color: var(--accent);
+          background: rgba(200, 134, 10, 0.1);
+          transform: translateX(-5px);
         }
 
         @media (max-width: 480px) {

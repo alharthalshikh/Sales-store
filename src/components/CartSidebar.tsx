@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
@@ -6,6 +6,23 @@ import { useStore } from '../hooks/useStore';
 export default function CartSidebar() {
     const { state, dispatch, cartTotal, cartCount, getFinalPrice } = useStore();
     const s = state.settings;
+
+    // منع سكرول الصفحة خلف اللوحة الجانبية
+    useEffect(() => {
+        if (state.isCartOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [state.isCartOpen]);
+
+    // الحد الأدنى = إعداد الأدمن أو أقل سعر منتج في المتجر
+    const lowestPrice = state.products.length > 0
+        ? Math.min(...state.products.filter(p => p.inStock !== false).map(p => getFinalPrice(p)))
+        : 0;
+    const minOrder = s.minOrder && s.minOrder > 0 ? s.minOrder : lowestPrice;
+    const isUnderMinOrder = cartTotal < minOrder;
 
     return (
         <>
@@ -96,18 +113,18 @@ export default function CartSidebar() {
                             </div>
                         )}
 
-                        {(s.minOrder || 0) > 0 && cartTotal < (s.minOrder || 0) && (
+                        {minOrder > 0 && isUnderMinOrder && (
                             <div style={{ background: 'rgba(244, 67, 54, 0.1)', color: 'var(--error)', padding: '10px', borderRadius: '10px', fontSize: '0.8rem', textAlign: 'center', marginBottom: '10px', border: '1px solid rgba(244, 67, 54, 0.2)' }}>
-                                ⚠️ الحد الأدنى للطلب هو {(s.minOrder || 0)} {s.currencySymbol}<br />
-                                متبقي {((s.minOrder || 0) - cartTotal).toFixed(2)} {s.currencySymbol} للمتابعة
+                                ⚠️ الحد الأدنى للطلب هو {minOrder.toFixed(0)} {s.currencySymbol}<br />
+                                متبقي {(minOrder - cartTotal).toFixed(0)} {s.currencySymbol} للمتابعة
                             </div>
                         )}
 
                         <Link
                             to="/checkout"
-                            className={`btn btn-primary btn-large ${(s.minOrder || 0) > 0 && cartTotal < (s.minOrder || 0) ? 'disabled' : ''}`}
+                            className={`btn btn-primary btn-large ${isUnderMinOrder ? 'disabled' : ''}`}
                             onClick={(e) => {
-                                if ((s.minOrder || 0) > 0 && cartTotal < (s.minOrder || 0)) {
+                                if (isUnderMinOrder) {
                                     e.preventDefault();
                                     return;
                                 }
@@ -116,8 +133,8 @@ export default function CartSidebar() {
                             style={{
                                 width: '100%',
                                 justifyContent: 'center',
-                                opacity: (s.minOrder || 0) > 0 && cartTotal < (s.minOrder || 0) ? 0.5 : 1,
-                                pointerEvents: (s.minOrder || 0) > 0 && cartTotal < (s.minOrder || 0) ? 'none' : 'auto'
+                                opacity: isUnderMinOrder ? 0.5 : 1,
+                                pointerEvents: isUnderMinOrder ? 'none' : 'auto'
                             }}
                         >
                             إتمام الطلب

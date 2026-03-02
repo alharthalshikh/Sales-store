@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
+import { formatOrderId } from '../utils/formatOrderId';
 import { showToast } from '../components/ToastContainer';
 import { Product, Category, DiscountRule, Order, Review, LoyaltyReward } from '../types';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -417,7 +418,7 @@ export default function AdminPage() {
                         <tbody>
                             {[...state.orders].sort((a, b) => b.createdAt - a.createdAt).slice(0, 5).map(order => (
                                 <tr key={order.id}>
-                                    <td style={{ fontWeight: 600 }}>{order.id}</td>
+                                    <td style={{ fontWeight: 600 }}>{formatOrderId(order.id)}</td>
                                     <td>{order.customerName}</td>
                                     <td style={{ color: 'var(--accent)', fontWeight: 700 }}>{order.total.toFixed(0)} {state.settings.currencySymbol}</td>
                                     <td><span className={`status-badge status-${order.status}`}>{statusLabels[order.status]}</span></td>
@@ -594,7 +595,7 @@ export default function AdminPage() {
                                 {filteredOrders.map(order => (
                                     <tr key={order.id}>
                                         <td style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--accent)', fontFamily: 'monospace' }} title={order.id}>
-                                            {order.id.split('-')[0].toUpperCase()}
+                                            {formatOrderId(order.id)}
                                         </td>
                                         <td>{order.customerName}</td>
                                         <td dir="ltr" style={{ fontSize: '0.85rem' }}>{order.customerPhone}</td>
@@ -1056,6 +1057,7 @@ export default function AdminPage() {
                         <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>الحد الأدنى للطلب</label>
                         <input type="number" value={settingsForm.minOrder || 0} onChange={e => setSettingsForm(prev => ({ ...prev, minOrder: Number(e.target.value) }))}
                             style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9rem' }} />
+                        <p style={{ fontSize: '0.72rem', color: 'var(--text-light)', marginTop: 4 }}>إذا كان 0، فسيتم استخدام أقل سعر منتج تلقائياً</p>
                     </div>
                     <div style={{ display: 'flex', gap: 10 }}>
                         <div style={{ flex: 1 }}>

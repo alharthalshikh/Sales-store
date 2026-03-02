@@ -61,8 +61,10 @@ const LogoRenderer: React.FC<LogoRendererProps> = ({ logo, size = 32, className 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: size,
-                height: size,
+                minWidth: size,
+                width: 'auto',
+                minHeight: size,
+                whiteSpace: 'nowrap',
                 ...styles
             }}
         >

@@ -5,6 +5,7 @@ import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
 import { showToast } from '../components/ToastContainer';
 import { Order } from '../types';
+import { formatOrderId } from '../utils/formatOrderId';
 
 declare var L: any; // Leaflet global
 
@@ -159,15 +160,18 @@ export default function CheckoutPage() {
     };
 
     const [sendVia, setSendVia] = useState<'whatsapp' | 'internal'>('whatsapp');
-    const [acceptTerms, setAcceptTerms] = useState(false);
+    const [acceptTerms, setAcceptTerms] = useState(true);
 
     // نظام الكوبونات
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState<{ name: string; type: string; value: number } | null>(null);
     const [couponError, setCouponError] = useState('');
 
-    // المبالغ والشحن
-    const minOrder = s.minOrder || 0;
+    // الحد الأدنى = إعداد الأدمن أو أقل سعر منتج في المتجر
+    const lowestPrice = state.products.length > 0
+        ? Math.min(...state.products.filter(p => p.inStock !== false).map(p => getFinalPrice(p)))
+        : 0;
+    const minOrder = s.minOrder && s.minOrder > 0 ? s.minOrder : lowestPrice;
     const freeShippingThreshold = s.freeShippingThreshold || 0;
     const isUnderMinOrder = cartTotal < minOrder;
     const isFreeShipping = freeShippingThreshold > 0 && cartTotal >= freeShippingThreshold;
@@ -232,7 +236,7 @@ export default function CheckoutPage() {
 
         // إنشاء رقم طلب تقني متوافق مع قاعدة البيانات (UUID) ورقم مكتبي للقراءة (Human Readable)
         const technicalId = crypto.randomUUID();
-        const displayId = `ORD-${technicalId.split('-')[0].toUpperCase()}`;
+        const displayId = formatOrderId(technicalId);
         const earnedPoints = s.loyaltyEnabled ? Math.floor(finalTotal / (s.loyaltyPointsRatio || 10)) : 0;
 
         const order: Order = {

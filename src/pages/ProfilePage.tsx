@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
+import { formatOrderId } from '../utils/formatOrderId';
 
 // حساب مستوى الولاء بناءً على النقاط
 function getLoyaltyTier(points: number) {
@@ -177,8 +178,16 @@ export default function ProfilePage() {
                             <button className="btn btn-primary" style={{ marginTop: '16px' }} onClick={() => navigate('/products')}>تصفح المنتجات</button>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {userOrders.slice(0, 10).map(order => (
+                        <div className="orders-scroll-container" style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px',
+                            maxHeight: '320px',
+                            overflowY: 'auto',
+                            paddingLeft: '8px', // space for scrollbar
+                            direction: 'rtl'
+                        }}>
+                            {userOrders.map(order => (
                                 <div key={order.id} style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
@@ -189,10 +198,11 @@ export default function ProfilePage() {
                                     border: '1px solid var(--border)',
                                     flexWrap: 'wrap',
                                     gap: '12px',
+                                    flexShrink: 0
                                 }}>
                                     <div style={{ flex: 1, minWidth: '150px' }}>
                                         <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>
-                                            رقم الطلب: {order.id}
+                                            رقم الطلب: {formatOrderId(order.id)}
                                         </div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
                                             {formatDate(order.createdAt)} · {order.items.length} منتج
@@ -243,6 +253,22 @@ export default function ProfilePage() {
                         🚪 تسجيل الخروج
                     </button>
                 </div>
+
+                <style>{`
+                    .orders-scroll-container::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .orders-scroll-container::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .orders-scroll-container::-webkit-scrollbar-thumb {
+                        background: var(--border);
+                        border-radius: 10px;
+                    }
+                    .orders-scroll-container::-webkit-scrollbar-thumb:hover {
+                        background: var(--accent);
+                    }
+                `}</style>
             </div>
         </div>
     );

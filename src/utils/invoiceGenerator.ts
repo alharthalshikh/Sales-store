@@ -1,5 +1,6 @@
 import { Order } from '../types';
 import { StoreSettings } from '../context/StoreContextItems';
+import { formatOrderId } from './formatOrderId';
 
 export function generateInvoicePDF(order: Order, settings: StoreSettings) {
     const { storeName, storeLogo, whatsappNumber, currencySymbol } = settings;
@@ -43,7 +44,7 @@ export function generateInvoicePDF(order: Order, settings: StoreSettings) {
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>فاتورة #${order.id}</title>
+    <title>فاتورة #${formatOrderId(order.id)}</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #f8f9fa; padding: 20px; direction: rtl; }
@@ -92,7 +93,7 @@ export function generateInvoicePDF(order: Order, settings: StoreSettings) {
                 </div>
             </div>
             <div class="invoice-info">
-                <div class="invoice-num">فاتورة #${order.id}</div>
+                <div class="invoice-num">فاتورة #${formatOrderId(order.id)}</div>
                 <div class="date">${createdDate}</div>
                 <div style="margin-top:8px;">
                     <span class="status-badge" style="background:${order.status === 'delivered' ? '#4CAF50' : order.status === 'cancelled' ? '#F44336' : '#FF9800'}; color:#fff;">
@@ -115,7 +116,7 @@ export function generateInvoicePDF(order: Order, settings: StoreSettings) {
                 <div class="info-box">
                     <h4>📦 معلومات الطلب</h4>
                     <p>
-                        <strong>رقم الطلب:</strong> ${order.id}<br>
+                        <strong>رقم الطلب:</strong> ${formatOrderId(order.id)}<br>
                         <strong>طريقة الدفع:</strong> ${order.paymentMethod === 'card' ? 'بطاقة' : 'الدفع عند الاستلام'}<br>
                         <strong>نقاط الولاء:</strong> 🎁 ${order.loyaltyPointsEarned || 0} نقطة
                     </p>

@@ -21,6 +21,16 @@ export default function Navbar() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // منع سكرول الصفحة خلف القائمة الجانبية
+    useEffect(() => {
+        if (state.isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [state.isMobileMenuOpen]);
+
     const isActive = (path: string) => location.pathname === path;
     const settings = state.settings;
 

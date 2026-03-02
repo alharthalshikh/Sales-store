@@ -131,8 +131,10 @@ function ConditionalLayout() {
 
 function ConditionalFooter() {
     const location = useLocation();
-    const isExcluded = location.pathname.startsWith('/admin') || location.pathname === '/login';
-    if (isExcluded) return null;
+    const allowedPaths = ['/', '/products', '/favorites'];
+    const isAllowed = allowedPaths.includes(location.pathname);
+
+    if (!isAllowed) return null;
     return <Footer />;
 }
 

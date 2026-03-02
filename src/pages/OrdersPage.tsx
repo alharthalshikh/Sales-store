@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Star, RotateCcw, ChevronLeft, Package, Clock, Hash } from 'lucide-react';
 import { Order } from '../types';
 import { showToast } from '../components/ToastContainer';
+import { formatOrderId } from '../utils/formatOrderId';
 
 export default function OrdersPage() {
     const navigate = useNavigate();
@@ -218,12 +219,12 @@ export default function OrdersPage() {
                                                         style={{ color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', background: 'rgba(200,134,10,0.1)', padding: '2px 6px', borderRadius: '4px' }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            const fullId = `ORD-${order.id.split('-')[0].toUpperCase()}`;
+                                                            const fullId = formatOrderId(order.id);
                                                             navigator.clipboard.writeText(fullId);
                                                             showToast('تم نسخ رقم الطلب ✅');
                                                         }}
                                                     >
-                                                        ORD-{order.id.split('-')[0].toUpperCase()}
+                                                        {formatOrderId(order.id)}
                                                     </span>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '2px' }}>

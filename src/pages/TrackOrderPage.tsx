@@ -5,6 +5,7 @@ import { generateInvoicePDF } from '../utils/invoiceGenerator';
 import { supabase } from '../lib/supabase';
 import { dbToOrder } from '../context/StoreContextItems';
 import { Order } from '../types';
+import { formatOrderId } from '../utils/formatOrderId';
 
 export default function TrackOrderPage() {
     const navigate = useNavigate();
@@ -14,6 +15,12 @@ export default function TrackOrderPage() {
     const [searched, setSearched] = useState(false);
     const [loading, setLoading] = useState(false);
     const [cloudOrders, setCloudOrders] = useState<Order[]>([]);
+
+    const spinStyle = `
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    `;
 
     const query = searchQuery.trim();
     const isOrderId = query.toUpperCase().startsWith('ORD-');
@@ -51,6 +58,7 @@ export default function TrackOrderPage() {
         if (!query) return;
 
         setLoading(true);
+        setCloudOrders([]); // مسح النتائج السابقة قبل البحث الجديد
         setSearched(true);
 
         try {
@@ -66,13 +74,17 @@ export default function TrackOrderPage() {
 
             const { data, error } = await supabaseQuery;
 
-            if (data && !error) {
+            if (error) throw error;
+
+            if (data) {
                 setCloudOrders(data.map(dbToOrder));
             }
         } catch (err) {
-            console.warn('Cloud search failed:', err);
+            console.error('Track search error:', err);
+            // هنا يمكن إضافة تنبيه للمستخدم في حال فشل الاتصال
         } finally {
-            setLoading(false);
+            // التأكيد على إيقاف حالة التحميل بغض النظر عن النتيجة
+            setTimeout(() => setLoading(false), 300);
         }
     };
 
@@ -118,7 +130,8 @@ export default function TrackOrderPage() {
                     <label style={{ display: 'block', fontWeight: 600, marginBottom: '10px', color: 'var(--text-secondary)' }}>
                         🔍 ابحث برقم الهاتف أو رقم الطلب (مثال: ORD-XXXX)
                     </label>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <style>{spinStyle}</style>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <input
                             type="text"
                             placeholder="رقم الهاتف أو رقم الطلب..."
@@ -126,7 +139,7 @@ export default function TrackOrderPage() {
                             onChange={e => { setSearchQuery(e.target.value); setSearched(false); }}
                             dir="ltr"
                             style={{
-                                flex: 1,
+                                flex: '1 1 250px',
                                 padding: '14px 18px',
                                 borderRadius: '12px',
                                 border: '1px solid var(--border)',
@@ -137,8 +150,35 @@ export default function TrackOrderPage() {
                                 letterSpacing: '0.5px',
                             }}
                         />
-                        <button type="submit" className="btn btn-primary" style={{ padding: '14px 28px', fontSize: '1rem' }} disabled={loading}>
-                            {loading ? '⏳ جاري البحث...' : '🔍 بحث'}
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            style={{
+                                padding: '14px 28px',
+                                fontSize: '1rem',
+                                minWidth: '160px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '10px'
+                            }}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <>
+                                    <div style={{
+                                        width: '18px',
+                                        height: '18px',
+                                        border: '2px solid rgba(255,255,255,0.3)',
+                                        borderTopColor: '#fff',
+                                        borderRadius: '50%',
+                                        animation: 'spin 0.8s linear infinite'
+                                    }} />
+                                    <span>جاري البحث</span>
+                                </>
+                            ) : (
+                                <>🔍 بحث</>
+                            )}
                         </button>
                     </div>
                 </form>
@@ -196,7 +236,7 @@ export default function TrackOrderPage() {
                                                 {/* رأس الطلب */}
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                                                     <div>
-                                                        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>رقم الطلب: ORD-{order.id.split('-')[0].toUpperCase()}</div>
+                                                        <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>رقم الطلب: {formatOrderId(order.id)}</div>
                                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '4px' }}>
                                                             {formatDate(order.createdAt)}
                                                         </div>
@@ -323,6 +363,6 @@ export default function TrackOrderPage() {
                     </div>
                 )}
             </div>
-        </div >
+        </div>
     );
 }
