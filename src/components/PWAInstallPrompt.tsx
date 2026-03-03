@@ -5,48 +5,62 @@ import { useStore } from '../hooks/useStore';
 export default function PWAInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [isVisible, setIsVisible] = useState(false);
+    const [platform, setPlatform] = useState<'ios' | 'android' | 'other'>('other');
     const { state } = useStore();
     const s = state.settings;
 
     useEffect(() => {
-        const handler = (e: any) => {
-            // Prevent Chrome 67 and earlier from automatically showing the prompt
-            e.preventDefault();
-            // Stash the event so it can be triggered later.
-            setDeferredPrompt(e);
+        // اكتشاف المنصة
+        const ua = window.navigator.userAgent.toLowerCase();
+        const isIOS = /iphone|ipad|ipod/.test(ua);
+        setPlatform(isIOS ? 'ios' : (/android/.test(ua) ? 'android' : 'other'));
 
-            // تحقق مما إذا كان المستخدم قد أغلق التنبيه سابقاً في هذه الجلسة
-            const isDismissed = sessionStorage.getItem('pwa-prompt-dismissed');
-            if (!isDismissed) {
-                // إظهار التنبيه بعد 5 ثوانٍ من دخول الموقع لضمان تجربة مستخدم جيدة
-                setTimeout(() => setIsVisible(true), 5000);
-            }
+        // التحقق مما إذا كان الموقع مفتوحاً كتطبيق بالفعل
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+
+        if (isStandalone) {
+            setIsVisible(false);
+            return;
+        }
+
+        // للأندرويد ومتصفح كروم
+        const handler = (e: any) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            // إظهار التنبيه بعد 3 ثوانٍ
+            setTimeout(() => setIsVisible(true), 3000);
         };
 
-        window.addEventListener('beforeinstallprompt', handler);
+        // للأيفون أو إذا لم يدعم المتصفح الحدث التلقائي، نظهره يدوياً بعد 3 ثوانٍ
+        if (isIOS || !('onbeforeinstallprompt' in window)) {
+            setTimeout(() => setIsVisible(true), 3000);
+        }
 
+        window.addEventListener('beforeinstallprompt', handler);
         return () => window.removeEventListener('beforeinstallprompt', handler);
     }, []);
 
     const handleInstall = async () => {
-        if (!deferredPrompt) return;
+        if (platform === 'ios') {
+            alert('لتثبيت التطبيق على آيفون:\n1. اضغط على زر "مشاركة" (Share) في الأسفل\n2. اختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)');
+            return;
+        }
 
-        // Show the prompt
+        if (!deferredPrompt) {
+            alert('يرجى الضغط على القائمة في متصفحك واختيار "تثبيت التطبيق"');
+            return;
+        }
+
         deferredPrompt.prompt();
-
-        // Wait for the user to respond to the prompt
         const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User response to the install prompt: ${outcome}`);
-
-        // We've used the prompt, and can't use it again, throw it away
-        setDeferredPrompt(null);
-        setIsVisible(false);
+        if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+            setIsVisible(false);
+        }
     };
 
     const handleDismiss = () => {
         setIsVisible(false);
-        // حفظ قرار الإغلاق للجلسة الحالية فقط
-        sessionStorage.setItem('pwa-prompt-dismissed', 'true');
     };
 
     if (!isVisible) return null;
@@ -67,12 +81,14 @@ export default function PWAInstallPrompt() {
                     </div>
 
                     <p className="pwa-description">
-                        قم بتثبيت المتجر على شاشتك الرئيسية للوصول السريع، والحصول على إشعارات فورية وتجربة تسوق أفضل.
+                        {platform === 'ios'
+                            ? 'للحصول على أفضل تجربة، أضف المتجر إلى شاشتك الرئيسية عبر زر المشاركة.'
+                            : 'قم بتثبيت المتجر على شاشتك الرئيسية للوصول السريع وتجربة تسوق أفضل.'}
                     </p>
 
                     <div className="pwa-actions">
                         <button className="pwa-install-btn" onClick={handleInstall}>
-                            تثبيت الآن
+                            {platform === 'ios' ? 'كيفية التثبيت؟' : 'تثبيت الآن'}
                         </button>
                         <button className="pwa-later-btn" onClick={handleDismiss}>
                             لاحقاً
