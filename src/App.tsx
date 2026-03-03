@@ -20,6 +20,7 @@ import TrackOrderPage from './pages/TrackOrderPage';
 import RewardsPage from './pages/RewardsPage';
 import OrdersPage from './pages/OrdersPage';
 import LiveNotification from './components/LiveNotification';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import theme from './config/theme';
 
 // Apply theme colors as CSS variables
@@ -109,6 +110,7 @@ function MainContent() {
             </Routes>
             <ConditionalFooter />
 
+            <PWAInstallPrompt />
             <LiveNotification />
             <ToastContainer />
         </>
