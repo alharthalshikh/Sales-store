@@ -22,15 +22,18 @@ export default function TrackOrderPage() {
         }
     `;
 
-    const query = searchQuery.trim();
-    const isOrderId = query.toUpperCase().startsWith('ORD-');
-    const idPart = isOrderId ? query.split('-')[1]?.toLowerCase() : '';
+    const query = searchQuery.trim().toUpperCase();
+    const idPart = query.startsWith('ORD-') ? query.replace('ORD-', '') : query;
+
+    // يعتبر رقم طلب إذا بدأ بـ ORD- أو كان طوله 8 أحرف ويتكون من أرقام وحروف A-F
+    const isOrderIdQuery = query.startsWith('ORD-') || (idPart.length === 8 && /^[0-9A-F]+$/.test(idPart));
 
     const localOrders = state.orders.filter(o => {
-        if (isOrderId) {
-            return o.id.toLowerCase().startsWith(idPart);
+        const orderIdPart = o.id.split('-')[0].toUpperCase();
+        if (isOrderIdQuery) {
+            return orderIdPart.startsWith(idPart);
         }
-        return o.customerPhone === query;
+        return o.customerPhone === searchQuery.trim();
     });
 
     const customerOrders = searched
@@ -58,22 +61,21 @@ export default function TrackOrderPage() {
         if (!query) return;
 
         setLoading(true);
-        setCloudOrders([]); // مسح النتائج السابقة قبل البحث الجديد
+        setCloudOrders([]);
         setSearched(true);
 
         try {
-            // البحث في سحابة Supabase
             let supabaseQuery = supabase.from('orders').select('*');
 
-            if (isOrderId && idPart) {
+            if (isOrderIdQuery) {
                 // البحث عن الطلب الذي يبدأ معرفه بهذا الجزء (Case-insensitive)
-                supabaseQuery = supabaseQuery.ilike('id', `${idPart}%`);
+                supabaseQuery = supabaseQuery.ilike('id', `${idPart.toLowerCase()}%`);
             } else {
-                supabaseQuery = supabaseQuery.eq('customer_phone', query);
+                // البحث برقم الهاتف
+                supabaseQuery = supabaseQuery.eq('customer_phone', searchQuery.trim());
             }
 
             const { data, error } = await supabaseQuery;
-
             if (error) throw error;
 
             if (data) {
@@ -81,10 +83,8 @@ export default function TrackOrderPage() {
             }
         } catch (err) {
             console.error('Track search error:', err);
-            // هنا يمكن إضافة تنبيه للمستخدم في حال فشل الاتصال
         } finally {
-            // التأكيد على إيقاف حالة التحميل بغض النظر عن النتيجة
-            setTimeout(() => setLoading(false), 300);
+            setLoading(false);
         }
     };
 
