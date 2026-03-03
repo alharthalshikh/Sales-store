@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, X, Plus, Minus, Trash2 } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
+import { showToast } from './ToastContainer';
 
 export default function CartSidebar() {
     const { state, dispatch, cartTotal, cartCount, getFinalPrice } = useStore();
@@ -65,7 +66,15 @@ export default function CartSidebar() {
                                                 <Minus size={14} />
                                             </button>
                                             <span>{item.quantity}</span>
-                                            <button onClick={() => dispatch({ type: 'UPDATE_QUANTITY', productId: item.product.id, quantity: item.quantity + 1 })} disabled={item.quantity >= (item.product.stockQuantity || 0)}>
+                                            <button
+                                                onClick={() => {
+                                                    if (item.quantity >= (item.product.stockQuantity || 0)) {
+                                                        showToast(`عذراً، هذه هي آخر ${item.product.stockQuantity} قطع متوفرة من هذا المنتج`, 'warning');
+                                                    } else {
+                                                        dispatch({ type: 'UPDATE_QUANTITY', productId: item.product.id, quantity: item.quantity + 1 });
+                                                    }
+                                                }}
+                                            >
                                                 <Plus size={14} />
                                             </button>
                                             <button className="cart-item-remove" onClick={() => dispatch({ type: 'REMOVE_FROM_CART', productId: item.product.id })}>

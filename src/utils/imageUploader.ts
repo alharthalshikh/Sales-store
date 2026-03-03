@@ -51,10 +51,10 @@ export async function uploadImage(
     folder: string = 'products'
 ): Promise<string | null> {
     try {
-        console.log('🖼️ بدأت عملية ضغط الصورة...');
+        // console.log('🖼️ بدأت عملية ضغط الصورة...');
         // ضغط الصورة
         const compressed = await compressImage(file);
-        console.log('✅ اكتمل ضغط الصورة، جاري الرفع إلى Supabase...');
+        // console.log('✅ اكتمل ضغط الصورة، جاري الرفع إلى Supabase...');
 
         // إنشاء اسم فريد للملف
         const ext = 'webp';
@@ -62,10 +62,10 @@ export async function uploadImage(
 
         // تحويل الـ Blob إلى File لزيادة الاستقرار
         const uploadFile = new File([compressed], 'upload.webp', { type: 'image/webp' });
-        console.log(`📦 حجم الملف النهائي: ${(uploadFile.size / 1024).toFixed(2)} KB`);
+        // console.log(`📦 حجم الملف النهائي: ${(uploadFile.size / 1024).toFixed(2)} KB`);
 
         // رفع الصورة
-        console.log(`📤 جاري رفع ملف: ${fileName} إلى bucket: ${BUCKET}`);
+        // console.log(`📤 جاري رفع ملف: ${fileName} إلى bucket: ${BUCKET}`);
 
         const { data, error } = await supabase.storage
             .from(BUCKET)
@@ -76,7 +76,7 @@ export async function uploadImage(
             });
 
         if (error) {
-            console.error('❌ خطأ في رد Supabase Storage:', error);
+            // console.error('❌ خطأ في رد Supabase Storage:', error);
             const errorMsg = error.message || JSON.stringify(error);
             if (errorMsg.includes('bucket_id')) {
                 alert('فشل الرفع: المجلد (store-assets) غير موجود. يرجى التأكد من إنشائه في Supabase وتعيينه كـ Public.');
@@ -95,10 +95,10 @@ export async function uploadImage(
             .from(BUCKET)
             .getPublicUrl(data.path);
 
-        console.log('✅ تم رفع الصورة بنجاح:', urlData.publicUrl);
+        // console.log('✅ تم رفع الصورة بنجاح:', urlData.publicUrl);
         return urlData.publicUrl;
     } catch (err: any) {
-        console.error('❌ خطأ غير متوقع في رفع الصورة:', err);
+        // console.error('❌ خطأ غير متوقع في رفع الصورة:', err);
         alert(`خطأ غير متوقع: ${err.message || 'فشل الاتصال بالخادم. تأكد من جودة الإنترنت.'}`);
         return null;
     }
@@ -117,12 +117,12 @@ export async function deleteImage(url: string): Promise<boolean> {
         const { error } = await supabase.storage.from(BUCKET).remove([path]);
 
         if (error) {
-            console.error('❌ خطأ في حذف الصورة:', error);
+            // console.error('❌ خطأ في حذف الصورة:', error);
             return false;
         }
         return true;
     } catch (err) {
-        console.error('❌ خطأ في حذف الصورة:', err);
+        // console.error('❌ خطأ في حذف الصورة:', err);
         return false;
     }
 }

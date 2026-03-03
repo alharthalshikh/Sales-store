@@ -1,21 +1,27 @@
-// ============================================================
-// 🔐 نظام المصادقة المطور - Supabase Auth
-// ============================================================
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { auth } from '../lib/firebase';
+import {
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    User as FirebaseUser
+} from 'firebase/auth';
 
 interface AuthContextType {
     isAdmin: boolean;
     adminName: string;
     adminEmail: string;
-    user: User | null;
+    user: FirebaseUser | null;
     loading: boolean;
     role: string | null;
     isBanned: boolean;
+    userData: any;
     login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     signUp: (email: string, password: string, metadata: { name: string, phone?: string }) => Promise<{ success: boolean; error?: string }>;
+    refreshUserData: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,12 +30,13 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const MASTER_ADMIN_EMAIL = 'alharth465117@gmail.com';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<FirebaseUser | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [adminName, setAdminName] = useState('');
     const [adminEmail, setAdminEmail] = useState('');
     const [role, setRole] = useState<string | null>(null);
     const [isBanned, setIsBanned] = useState(false);
+    const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     // سحب البيانات من الذاكرة المحلية فوراً لتسريع العرض
@@ -91,9 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch (e) { }
 
             let adBlock = false;
-            try {
-                await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { method: 'HEAD', mode: 'no-cors' }).catch(() => adBlock = true);
-            } catch (e) { }
+            // تم إزالة فحص حاجب الإعلانات لتجنب ظهور أخطاء حمراء في الكونسول (ERR_NAME_NOT_RESOLVED)
 
             const conn: any = (navigator as any).connection || {};
             const network = {
@@ -159,11 +164,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 updated_at: new Date().toISOString()
             }).eq('id', userId);
 
-            if (updateError) {
-                console.warn("⚠️ فشل في تحديث البصمة الرقمية:", updateError.message);
-            } else {
-                console.log("✅ تمت أرشفة البصمة الجنائية بنجاح للهدف:", userId.slice(0, 8));
-            }
+            // if (updateError) {
+            //     console.warn("⚠️ فشل في تحديث البصمة الرقمية:", updateError.message);
+            // } else {
+            //     console.log("✅ تمت أرشفة البصمة الجنائية بنجاح للهدف:", userId.slice(0, 8));
+            // }
 
         } catch (error) {
             console.error("🕵️ نظام البصمة: خطأ فادح:", error);
@@ -171,12 +176,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const checkAdmin = async (userId: string, email: string): Promise<boolean> => {
-        console.log("🧐 جاري فحص رتبة المستخدم:", email);
+        // console.log("🧐 جاري فحص رتبة المستخدم:", email);
 
         // 🔒 خط الدفاع الأول: إيميل المدير العام = أدمن فوراً في الواجهة
         const isMasterAdmin = email === MASTER_ADMIN_EMAIL;
         if (isMasterAdmin) {
-            console.log("👑 مرحباً بالمدير العام!");
+            // console.log("👑 مرحباً بالمدير العام!");
             setIsAdmin(true);
             setRole('admin');
             setAdminName('الحارث الشيخ');
@@ -196,25 +201,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // إذا لم يكن موجوداً في جدول users، ننشئ له سجلاً
             if (!userData) {
-                console.log("🆕 إنشاء ملف شخصي جديد للمستخدم...");
+                // console.log("🆕 إنشاء ملف شخصي جديد للمستخدم...");
                 const newRole = isMasterAdmin ? 'admin' : 'customer';
                 const { data: newProfile } = await supabase.from('users').upsert({
                     id: userId,
                     email: email,
-                    name: isMasterAdmin ? 'الحارث الشيخ' : (user?.user_metadata?.full_name || 'مستخدم جديد'),
-                    phone: user?.user_metadata?.phone || '',
+                    name: isMasterAdmin ? 'الحارث الشيخ' : 'مستخدم جديد',
+                    phone: '',
                     role: newRole,
                     is_active: true,
                     is_suspended: false
-                }).select().single();
+                }, { onConflict: 'id' }).select().single();
                 userData = newProfile;
             }
 
-            // تأمين المدير العام: إذا كان الإيميل هو إيميل المدير ولكن الرتبة خاطئة
-            if (isMasterAdmin && userData && userData.role !== 'admin') {
-                console.log("🔧 تصحيح رتبة المدير العام...");
-                await supabase.from('users').update({ role: 'admin', is_active: true, is_suspended: false }).eq('id', userId);
+            // تأمين المدير العام: إذا كان الإيميل هو إيميل المدير ولكن الرتبة أو الاسم غير صحيحين
+            if (isMasterAdmin && userData && (userData.role !== 'admin' || !userData.name || userData.name === email.split('@')[0])) {
+                // console.log("🔧 تصحيح بيانات المدير العام...");
+                await supabase.from('users').update({
+                    role: 'admin',
+                    name: 'الحارث الشيخ',
+                    is_active: true,
+                    is_suspended: false
+                }).eq('id', userId);
                 userData.role = 'admin';
+                userData.name = 'الحارث الشيخ';
+                setAdminName('الحارث الشيخ');
             }
 
             if (userData) {
@@ -246,10 +258,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // 🛡️ الآن نقوم بتحديث البصمة بما أننا تأكدنا من وجود السجل
                 captureFingerprint(userId);
 
+                setUserData(userData);
                 return isUserAdmin;
             }
-
-            // fallback: لو فشل كل شيء والمستخدم هو المدير العام
             return isMasterAdmin;
         } catch (e) {
             console.error("❌ Error checking admin:", e);
@@ -257,28 +268,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const refreshUserData = async () => {
+        if (!user) return;
+        const { data } = await supabase.from('users').select('*').eq('id', user.uid).single();
+        if (data) setUserData(data);
+    };
+
     useEffect(() => {
         let isMounted = true;
-
         const timeout = setTimeout(() => {
             if (isMounted) setLoading(false);
         }, 5000);
 
         let profileSubscription: any = null;
 
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (!isMounted) return;
-            if (session?.user) {
-                setUser(session.user);
-                await checkAdmin(session.user.id, session.user.email || '');
+
+            if (profileSubscription) {
+                supabase.removeChannel(profileSubscription);
+                profileSubscription = null;
+            }
+
+            if (firebaseUser) {
+                setUser(firebaseUser);
+                await checkAdmin(firebaseUser.uid, firebaseUser.email || '');
 
                 profileSubscription = supabase
-                    .channel(`profile-${session.user.id}`)
+                    .channel(`profile-${firebaseUser.uid}`)
                     .on('postgres_changes', {
                         event: 'UPDATE',
                         schema: 'public',
                         table: 'users',
-                        filter: `id=eq.${session.user.id}`
+                        filter: `id=eq.${firebaseUser.uid}`
                     }, (payload) => {
                         if (payload.new && (payload.new as any).is_suspended) {
                             setIsBanned(true);
@@ -287,87 +309,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         }
                     })
                     .subscribe();
+            } else {
+                setUser(null);
+                setIsAdmin(false);
+                setIsBanned(false);
+                setRole(null);
             }
             setLoading(false);
             clearTimeout(timeout);
-        }).catch(() => {
-            if (isMounted) setLoading(false);
         });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                if (!isMounted) return;
-
-                if (profileSubscription) {
-                    supabase.removeChannel(profileSubscription);
-                }
-
-                if (session?.user) {
-                    setUser(session.user);
-                    await checkAdmin(session.user.id, session.user.email || '');
-
-                    profileSubscription = supabase
-                        .channel(`profile-${session.user.id}`)
-                        .on('postgres_changes', {
-                            event: 'UPDATE',
-                            schema: 'public',
-                            table: 'users',
-                            filter: `id=eq.${session.user.id}`
-                        }, (payload) => {
-                            if (payload.new && (payload.new as any).is_suspended) {
-                                setIsBanned(true);
-                            } else if (payload.new && !(payload.new as any).is_suspended) {
-                                setIsBanned(false);
-                            }
-                        })
-                        .subscribe();
-                } else {
-                    setUser(null);
-                    setIsAdmin(false);
-                    setIsBanned(false);
-                }
-            }
-        );
 
         return () => {
             isMounted = false;
-            subscription.unsubscribe();
+            unsubscribe();
             if (profileSubscription) supabase.removeChannel(profileSubscription);
             clearTimeout(timeout);
         };
     }, []);
 
-    const translateAuthError = (msg: string) => {
-        if (msg.includes('Invalid login credentials')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-        if (msg.includes('Email not confirmed')) return 'يرجى تأكيد بريدك الإلكتروني أولاً عبر الرابط المرسل إليك';
-        if (msg.includes('User not found')) return 'المستخدم غير موجود';
-        if (msg.includes('Password is too short')) return 'كلمة المرور قصيرة جداً (6 أحرف على الأقل)';
-        if (msg.includes('User already registered')) return 'هذا البريد الإلكتروني مسجل مسبقاً';
-        if (msg.includes('Too many requests')) return 'محاولات كثيرة جداً. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى';
-        if (msg.includes('Database error')) return 'حدث خطأ في قاعدة البيانات. يرجى المحاولة لاحقاً';
-        return msg;
+    const translateAuthError = (code: string) => {
+        switch (code) {
+            case 'auth/invalid-email': return 'البريد الإلكتروني غير صحيح';
+            case 'auth/user-disabled': return 'هذا الحساب معطل';
+            case 'auth/user-not-found': return 'المستخدم غير موجود';
+            case 'auth/wrong-password': return 'كلمة المرور غير صحيحة';
+            case 'auth/email-already-in-use': return 'هذا البريد الإلكتروني مسجل مسبقاً';
+            case 'auth/weak-password': return 'كلمة المرور ضعيفة جداً';
+            case 'auth/invalid-credential': return 'بيانات الدخول غير صحيحة';
+            case 'auth/too-many-requests': return 'محاولات كثيرة جداً. يرجى الانتظار قليلاً';
+            default: return 'حدث خطأ في عملية المصادقة';
+        }
     };
 
     const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
         try {
-            const authTimeout = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('عذراً، الخادم لا يستجيب. يرجى التأكد من الإنترنت وحاول ثانية.')), 15000)
-            );
-
-            const authPromise = supabase.auth.signInWithPassword({ email, password });
-            const { data, error } = await Promise.race([authPromise, authTimeout]) as any;
-
-            if (error) {
-                return { success: false, error: translateAuthError(error.message) };
-            }
-
-            if (data.user) {
-                setUser(data.user);
-                await checkAdmin(data.user.id, data.user.email || '');
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            if (userCredential.user) {
+                await checkAdmin(userCredential.user.uid, userCredential.user.email || '');
 
                 if (isBanned) {
-                    await supabase.auth.signOut();
-                    setUser(null);
+                    await signOut(auth);
                     return { success: false, error: 'عذراً، هذا الحساب محظور. يرجى التواصل مع الإدارة.' };
                 }
 
@@ -375,50 +356,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             return { success: false, error: 'حدث خطأ غير متوقع' };
         } catch (e: any) {
-            return { success: false, error: e.message || 'خطأ في الاتصال' };
+            // console.error("❌ Firebase Login Error:", e.code, e);
+            return { success: false, error: translateAuthError(e.code) };
         }
     };
 
     const signUp = async (email: string, password: string, metadata: { name: string, phone?: string }): Promise<{ success: boolean; error?: string }> => {
         try {
-            console.log("📝 جاري إنشاء حساب جديد:", email);
-            const { data, error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: metadata.name,
-                        phone: metadata.phone
-                    }
-                }
-            });
+            // console.log("📝 جاري إنشاء حساب جديد في Firebase:", email);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-            if (error) {
-                return { success: false, error: translateAuthError(error.message) };
-            }
-
-            // إنشاء ملف المستخدم في جدول users مباشرة (المصدر الموحد)
-            if (data.user) {
+            if (userCredential.user) {
                 await supabase.from('users').upsert({
-                    id: data.user.id,
+                    id: userCredential.user.uid,
                     email: email,
                     name: metadata.name,
                     phone: metadata.phone || '',
                     role: 'customer',
                     is_active: true,
                     is_suspended: false
-                });
+                }, { onConflict: 'id' });
                 return { success: true };
             }
 
             return { success: false, error: 'حدث خطأ أثناء إنشاء الحساب' };
         } catch (e: any) {
-            return { success: false, error: e.message };
+            console.error("❌ Firebase SignUp Error:", e.code, e);
+            return { success: false, error: translateAuthError(e.code) };
         }
     };
 
     const logout = async () => {
-        // 1. مسح الحالة محلياً فوراً لجعل الواجهة سريعة الاستجابة
         localStorage.removeItem('admin-fallback');
         setUser(null);
         setIsAdmin(false);
@@ -427,17 +395,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsBanned(false);
         setRole(null);
 
-        // 2. محاولة تسجيل الخروج من السيرفر في الخلفية دون تعطيل المستخدم
         try {
-            await supabase.auth.signOut();
+            await signOut(auth);
         } catch (e) {
-            console.error("Sign out error (ignored):", e);
+            console.error("Firebase Sign out error:", e);
         }
     };
 
     return (
-        <AuthContext.Provider value={{ isAdmin, adminName, adminEmail, user, loading, role, isBanned, login, logout, signUp }}>
+        <AuthContext.Provider value={{ isAdmin, adminName, adminEmail, user, loading, role, isBanned, userData, login, logout, signUp, refreshUserData }}>
             {children}
         </AuthContext.Provider>
     );
 }
+
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) throw new Error('useAuth must be used within AuthProvider');
+    return context;
+};

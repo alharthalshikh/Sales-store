@@ -56,6 +56,8 @@ export interface Order {
     customerNotes?: string;
     status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
     paymentMethod?: 'cod' | 'card';
+    shippingFee?: number;
+    discount?: number;
     loyaltyPointsEarned?: number;
     createdAt: number;
 }

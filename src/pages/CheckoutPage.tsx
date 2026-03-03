@@ -21,12 +21,12 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default function CheckoutPage() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const { state, dispatch, cartTotal, getFinalPrice } = useStore();
     const s = state.settings;
     const [form, setForm] = useState({
-        name: user?.user_metadata?.full_name || '',
-        phone: user?.user_metadata?.phone || '',
+        name: userData?.name || user?.displayName || '',
+        phone: userData?.phone || '',
         address: '',
         notes: ''
     });
@@ -251,8 +251,10 @@ export default function CheckoutPage() {
             customerNotes: form.notes,
             status: 'pending',
             paymentMethod: 'cod',
+            shippingFee: shippingFee,
+            discount: couponDiscount,
             loyaltyPointsEarned: earnedPoints,
-            userId: user?.id,
+            userId: user?.uid,
             createdAt: Date.now(),
         };
         dispatch({ type: 'ADD_ORDER', order });
@@ -296,7 +298,7 @@ export default function CheckoutPage() {
                 dispatch({ type: 'REMOVE_DISCOUNT_RULE', ruleId: rule.id });
 
                 // 2. تحديث حالته في الذاكرة المحلية للمستخدم
-                const userPhone = user?.phone || user?.user_metadata?.phone || '';
+                const userPhone = userData?.phone || '';
                 if (userPhone) {
                     try {
                         const redeemed = JSON.parse(localStorage.getItem(`redeemed_coupons_${userPhone}`) || '[]');

@@ -240,7 +240,17 @@ export default function ProductDetailPage() {
                             <div className="quantity-selector">
                                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))}><Minus size={18} /></button>
                                 <span className="qty-value">{quantity}</span>
-                                <button onClick={() => setQuantity(Math.min(product.stockQuantity || 1, quantity + 1))} disabled={quantity >= (product.stockQuantity || 0)}><Plus size={18} /></button>
+                                <button
+                                    onClick={() => {
+                                        if (quantity >= (product.stockQuantity || 0)) {
+                                            showToast(`عذراً، هذه هي آخر ${product.stockQuantity} قطع متوفرة من هذا المنتج`, 'warning');
+                                        } else {
+                                            setQuantity(quantity + 1);
+                                        }
+                                    }}
+                                >
+                                    <Plus size={18} />
+                                </button>
                             </div>
                         </div>
 

@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function MessagesPage() {
     const { state, dispatch } = useStore();
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const s = state.settings;
     const [newMessage, setNewMessage] = useState('');
     const [senderName, setSenderName] = useState('');
@@ -14,9 +14,12 @@ export default function MessagesPage() {
 
     // تحميل بيانات المرسل السابقة أو استخدام بيانات المستخدم المسجل
     useEffect(() => {
-        if (user) {
-            setSenderName(user.user_metadata?.full_name || user.email || '');
-            setSenderPhone(user.user_metadata?.phone || '');
+        if (user && userData) {
+            setSenderName(userData.name || user.displayName || user.email || '');
+            setSenderPhone(userData.phone || '');
+            setStarted(true);
+        } else if (user) {
+            setSenderName(user.displayName || user.email || '');
             setStarted(true);
         } else {
             const savedName = localStorage.getItem('chat-sender-name');
@@ -27,7 +30,7 @@ export default function MessagesPage() {
                 setStarted(true);
             }
         }
-    }, [user]);
+    }, [user, userData]);
 
     const handleStart = () => {
         if (senderName.trim()) {
@@ -43,7 +46,7 @@ export default function MessagesPage() {
             type: 'ADD_MESSAGE',
             message: {
                 id: `MSG-${Date.now()}`,
-                userId: user?.id,
+                userId: user?.uid,
                 senderName,
                 senderPhone,
                 content: newMessage,
@@ -63,7 +66,7 @@ export default function MessagesPage() {
     // فلترة الرسائل للحصول على المحادثة الخاصة بهذا المستخدم فقط
     const userMessages = state.messages
         .filter(m => {
-            if (user) return m.userId === user.id || (m.senderPhone === user.user_metadata?.phone && !m.userId);
+            if (user) return m.userId === user.uid || (m.senderPhone === userData?.phone && !m.userId);
             return m.senderPhone === senderPhone || m.senderName === senderName;
         })
         .sort((a, b) => a.createdAt - b.createdAt);
@@ -95,7 +98,7 @@ export default function MessagesPage() {
                             className="btn btn-secondary btn-small"
                             onClick={() => {
                                 if (confirm('هل أنت متأكد من بدء محادثة جديدة؟ سيتم مسح الرسائل السابقة')) {
-                                    dispatch({ type: 'CLEAR_USER_MESSAGES', userId: user?.id, phone: senderPhone });
+                                    dispatch({ type: 'CLEAR_USER_MESSAGES', userId: user?.uid, phone: senderPhone });
                                     if (!user) {
                                         localStorage.removeItem('chat-sender-name');
                                         localStorage.removeItem('chat-sender-phone');

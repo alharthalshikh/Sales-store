@@ -265,6 +265,8 @@ export function dbToOrder(row: any): Order {
         customerNotes: row.customer_notes || '',
         status: row.status,
         paymentMethod: row.payment_method || 'cod',
+        shippingFee: Number(row.shipping_fee || 0),
+        discount: Number(row.discount || 0),
         loyaltyPointsEarned: row.loyalty_points_earned || 0,
         createdAt: new Date(row.created_at).getTime()
     };
@@ -282,6 +284,8 @@ export function orderToDb(o: Order) {
         customer_notes: o.customerNotes,
         status: o.status,
         payment_method: o.paymentMethod,
+        shipping_fee: o.shippingFee || 0,
+        discount: o.discount || 0,
         loyalty_points_earned: o.loyaltyPointsEarned || 0,
         created_at: new Date(o.createdAt).toISOString()
     };

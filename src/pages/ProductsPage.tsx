@@ -13,12 +13,12 @@ export default function ProductsPage() {
     const filteredProducts = useMemo(() => {
         let filtered = [...state.products];
 
-        console.log('🔍 Filtering:', {
+        /* console.log('🔍 Filtering:', {
             total: filtered.length,
             activeCategory,
             searchQuery,
             sortBy
-        });
+        }); */
 
         if (activeCategory && activeCategory !== 'all') {
             const normalizedCategory = String(activeCategory).trim();
@@ -26,7 +26,7 @@ export default function ProductsPage() {
                 const pCatId = String(p.categoryId || '').trim();
                 return pCatId === normalizedCategory;
             });
-            console.log('📂 After Category Filter:', filtered.length);
+            // console.log('📂 After Category Filter:', filtered.length);
         }
 
         if (searchQuery && searchQuery.trim()) {
@@ -36,7 +36,7 @@ export default function ProductsPage() {
                 (p.nameEn || '').toLowerCase().includes(q) ||
                 (p.description || '').toLowerCase().includes(q)
             );
-            console.log('🔎 After Search Filter:', filtered.length);
+            // console.log('🔎 After Search Filter:', filtered.length);
         }
 
         switch (sortBy) {

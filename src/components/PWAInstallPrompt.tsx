@@ -108,7 +108,7 @@ export default function PWAInstallPrompt() {
                     bottom: 24px;
                     right: 24px;
                     z-index: 9999;
-                    width: 380px;
+                    width: 320px;
                     max-width: calc(100vw - 48px);
                     animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
                 }
@@ -124,15 +124,15 @@ export default function PWAInstallPrompt() {
                     -webkit-backdrop-filter: blur(20px);
                     border: 1px solid var(--border);
                     border-radius: 24px;
-                    padding: 24px;
+                    padding: 18px;
                     position: relative;
                     box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 20px var(--accent-glow);
                 }
 
                 .pwa-close-btn {
                     position: absolute;
-                    top: 16px;
-                    right: 16px;
+                    top: 14px;
+                    right: 14px;
                     background: none;
                     border: none;
                     color: var(--text-light);
@@ -140,6 +140,7 @@ export default function PWAInstallPrompt() {
                     transition: all 0.3s;
                     padding: 4px;
                     border-radius: 50%;
+                    z-index: 2;
                 }
 
                 .pwa-close-btn:hover {
@@ -152,31 +153,33 @@ export default function PWAInstallPrompt() {
                     align-items: center;
                     gap: 12px;
                     margin-bottom: 12px;
+                    padding-right: 20px;
                 }
 
                 .pwa-icon-box {
-                    width: 44px;
-                    height: 44px;
+                    width: 40px;
+                    height: 40px;
                     background: rgba(200, 134, 10, 0.1);
                     border-radius: 12px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     border: 1px solid var(--border);
+                    flex-shrink: 0;
                 }
 
                 .pwa-title {
-                    font-size: 1.15rem;
+                    font-size: 1.05rem;
                     font-weight: 800;
                     color: #fff;
                     margin: 0;
                 }
 
                 .pwa-description {
-                    font-size: 0.9rem;
+                    font-size: 0.85rem;
                     color: var(--text-secondary);
                     line-height: 1.6;
-                    margin-bottom: 20px;
+                    margin-bottom: 18px;
                     text-align: right;
                 }
 
@@ -193,8 +196,8 @@ export default function PWAInstallPrompt() {
                     color: #1a1408;
                     border: none;
                     border-radius: 14px;
-                    padding: 12px;
-                    font-size: 0.95rem;
+                    padding: 10px;
+                    font-size: 0.9rem;
                     font-weight: 700;
                     cursor: pointer;
                     transition: all 0.3s;
@@ -208,11 +211,11 @@ export default function PWAInstallPrompt() {
                 }
 
                 .pwa-later-btn {
-                    padding: 12px 20px;
+                    padding: 10px 16px;
                     background: none;
                     border: none;
                     color: #fff;
-                    font-size: 0.95rem;
+                    font-size: 0.9rem;
                     font-weight: 600;
                     cursor: pointer;
                     transition: all 0.3s;
@@ -232,7 +235,7 @@ export default function PWAInstallPrompt() {
                     }
                     
                     .pwa-prompt-card {
-                        padding: 20px;
+                        padding: 16px;
                     }
                 }
             `}</style>

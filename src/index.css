@@ -597,6 +597,22 @@ ol {
   object-fit: cover;
 }
 
+.hero-bg.is-logo {
+  background: #0D0A06;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-bg.is-logo img {
+  width: auto;
+  height: 70%;
+  max-width: 80%;
+  object-fit: contain;
+  opacity: 0.3;
+  filter: blur(2px) brightness(0.7);
+}
+
 .hero-bg::after {
   content: '';
   position: absolute;

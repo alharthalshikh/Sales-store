@@ -8,12 +8,12 @@ import { LoyaltyReward } from '../types';
 
 export default function RewardsPage() {
     const { state, dispatch } = useStore();
-    const { user } = useAuth();
+    const { user, userData } = useAuth();
     const s = state.settings;
     const [copiedCode, setCopiedCode] = useState('');
 
-    const userPhone = user?.phone || user?.user_metadata?.phone || '';
-    const userUniqueId = user?.id || userPhone || 'default';
+    const userPhone = userData?.phone || '';
+    const userUniqueId = user?.uid || userPhone || 'default';
     const [redeemedCoupons, setRedeemedCoupons] = useState<{ code: string; reward: LoyaltyReward; used?: boolean }[]>(() => {
         try {
             return JSON.parse(localStorage.getItem(`redeemed_coupons_${userUniqueId}`) || localStorage.getItem(`redeemed_coupons_${userPhone}`) || '[]');
@@ -38,7 +38,7 @@ export default function RewardsPage() {
 
     // حساب نقاط المستخدم من الطلبات
     const userOrders = state.orders.filter(o =>
-        (o.userId === user?.id || (o.customerPhone === userPhone && userPhone)) &&
+        (o.userId === user?.uid || (o.customerPhone === userPhone && userPhone)) &&
         o.status === 'delivered'
     );
     const totalPoints = userOrders.reduce((sum, o) => sum + (o.loyaltyPointsEarned || 0), 0);
@@ -70,7 +70,7 @@ export default function RewardsPage() {
                 type: reward.discountType,
                 value: reward.discountValue,
                 active: true,
-                userId: user?.id, // ربط الكوبون بالمستخدم
+                userId: user?.uid, // ربط الكوبون بالمستخدم
             }
         });
 

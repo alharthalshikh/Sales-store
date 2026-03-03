@@ -15,13 +15,13 @@ function getLoyaltyTier(points: number) {
 export default function ProfilePage() {
     const navigate = useNavigate();
     const { state } = useStore();
-    const { user, isAdmin, adminName, adminEmail, logout } = useAuth();
+    const { user, isAdmin, adminName, adminEmail, logout, userData } = useAuth();
     const s = state.settings;
 
     // حساب بيانات العميل من الطلبات (مع دعم الطلبات القديمة برقم الهاتف)
-    const userPhone = user?.phone || user?.user_metadata?.phone || '';
+    const userPhone = userData?.phone || '';
     const userOrders = state.orders.filter(o =>
-        (o.userId === user?.id) || (o.customerPhone === userPhone && userPhone)
+        (o.userId === user?.uid) || (o.customerPhone === userPhone && userPhone)
     );
     const totalSpent = userOrders.reduce((sum, o) => o.status === 'delivered' ? sum + o.total : sum, 0);
     const totalPoints = userOrders.reduce((sum, o) => o.status === 'delivered' ? sum + (o.loyaltyPointsEarned || 0) : sum, 0);
@@ -106,7 +106,7 @@ export default function ProfilePage() {
                             <div>
                                 <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>صاحب البطاقة</div>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-                                    {adminName || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'عميل'}
+                                    {userData?.name || adminName || user?.displayName || user?.email?.split('@')[0] || 'عميل'}
                                 </div>
                                 <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
                                     {adminEmail || user?.email}
@@ -221,7 +221,7 @@ export default function ProfilePage() {
                                     }}>
                                         {statusLabels[order.status]}
                                     </div>
-                                    {order.loyaltyPointsEarned ? (
+                                    {order.loyaltyPointsEarned && order.status === 'delivered' ? (
                                         <div style={{ fontSize: '0.8rem', color: 'var(--success)', fontWeight: 600 }}>
                                             🎁 +{order.loyaltyPointsEarned} نقطة
                                         </div>

@@ -142,6 +142,16 @@ export function generateInvoicePDF(order: Order, settings: StoreSettings) {
                     <span>المجموع الفرعي:</span>
                     <span>${order.items.reduce((s, i) => s + i.product.price * i.quantity, 0).toFixed(0)} ${currencySymbol}</span>
                 </div>
+                ${(order.shippingFee ?? 0) > 0 ? `
+                <div class="row">
+                    <span>رسوم التوصيل:</span>
+                    <span>${order.shippingFee?.toFixed(0)} ${currencySymbol}</span>
+                </div>` : ''}
+                ${(order.discount ?? 0) > 0 ? `
+                <div class="row" style="color: #4CAF50;">
+                    <span>الخصم:</span>
+                    <span>-${order.discount?.toFixed(0)} ${currencySymbol}</span>
+                </div>` : ''}
                 <div class="row grand">
                     <span>المجموع الكلي:</span>
                     <span>${order.total.toFixed(0)} ${currencySymbol}</span>

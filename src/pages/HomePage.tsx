@@ -55,9 +55,16 @@ export default function HomePage() {
                                         <span className="btn btn-secondary btn-large">📱 تواصل واتساب</span>
                                     </div>
                                     <div className="hero-stats">
-                                        <div className="hero-stat"><div className="number">+{state.products.length * 10}</div><div className="label">منتج متوفر</div></div>
-                                        <div className="hero-stat"><div className="number">+2000</div><div className="label">عميل سعيد</div></div>
-                                        <div className="hero-stat"><div className="number">4.9</div><div className="label">تقييم العملاء</div></div>
+                                        <div className="hero-stat"><div className="number">{state.products.length}</div><div className="label">منتج متوفر</div></div>
+                                        <div className="hero-stat"><div className="number">+{state.customers.length || 0}</div><div className="label">عميل سعيد</div></div>
+                                        <div className="hero-stat">
+                                            <div className="number">
+                                                {state.reviews.length > 0
+                                                    ? (state.reviews.reduce((acc, r) => acc + r.rating, 0) / state.reviews.length).toFixed(1)
+                                                    : '5.0'}
+                                            </div>
+                                            <div className="label">تقييم العملاء</div>
+                                        </div>
                                         <div className="hero-stat"><div className="number">{state.categories.length}</div><div className="label">قسم متنوع</div></div>
                                     </div>
                                 </div>
@@ -100,9 +107,16 @@ export default function HomePage() {
                                             </a>
                                         </div>
                                         <div className="hero-stats">
-                                            <div className="hero-stat"><div className="number">+{state.products.length * 10}</div><div className="label">منتج متوفر</div></div>
-                                            <div className="hero-stat"><div className="number">+2000</div><div className="label">عميل سعيد</div></div>
-                                            <div className="hero-stat"><div className="number">4.9</div><div className="label">تقييم العملاء</div></div>
+                                            <div className="hero-stat"><div className="number">{state.products.length}</div><div className="label">منتج متوفر</div></div>
+                                            <div className="hero-stat"><div className="number">+{state.customers.length || 0}</div><div className="label">عميل سعيد</div></div>
+                                            <div className="hero-stat">
+                                                <div className="number">
+                                                    {state.reviews.length > 0
+                                                        ? (state.reviews.reduce((acc, r) => acc + r.rating, 0) / state.reviews.length).toFixed(1)
+                                                        : '5.0'}
+                                                </div>
+                                                <div className="label">تقييم العملاء</div>
+                                            </div>
                                             <div className="hero-stat"><div className="number">{state.categories.length}</div><div className="label">قسم متنوع</div></div>
                                         </div>
                                     </div>
@@ -133,8 +147,8 @@ export default function HomePage() {
                 ) : (
                     /* Fallback if no banners */
                     <>
-                        <div className="hero-bg">
-                            <img src="https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=1920&q=80" alt={s.storeName} />
+                        <div className="hero-bg is-logo">
+                            <img src="/hero-logo.svg" alt={s.storeName} />
                         </div>
                         <div className="hero-decoration" />
                         <div className="container">

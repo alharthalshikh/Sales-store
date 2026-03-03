@@ -62,7 +62,7 @@ export default function TrackOrderPage() {
 
         setLoading(true);
         setCloudOrders([]);
-        setSearched(true);
+        // سنقوم بتفعيل حالة البحث بعد انتهاء العملية لضمان عدم ظهور نتائج قديمة أثناء البحث
 
         try {
             let supabaseQuery = supabase.from('orders').select('*');
@@ -85,6 +85,7 @@ export default function TrackOrderPage() {
             console.error('Track search error:', err);
         } finally {
             setLoading(false);
+            setSearched(true);
         }
     };
 
@@ -138,16 +139,18 @@ export default function TrackOrderPage() {
                             value={searchQuery}
                             onChange={e => { setSearchQuery(e.target.value); setSearched(false); }}
                             dir="ltr"
+                            disabled={loading}
                             style={{
                                 flex: '1 1 250px',
                                 padding: '14px 18px',
                                 borderRadius: '12px',
                                 border: '1px solid var(--border)',
-                                background: 'var(--bg)',
+                                background: loading ? 'var(--bg-secondary)' : 'var(--bg)',
                                 color: 'var(--text)',
                                 fontSize: '1.1rem',
                                 fontFamily: 'var(--font)',
                                 letterSpacing: '0.5px',
+                                opacity: loading ? 0.7 : 1,
                             }}
                         />
                         <button
@@ -334,7 +337,8 @@ export default function TrackOrderPage() {
                                                 </div>
 
                                                 {/* نقاط الولاء المكتسبة */}
-                                                {(order.loyaltyPointsEarned ?? 0) > 0 && (
+                                                {/* نقاط الولاء المكتسبة - تظهر فقط بعد التوصيل */}
+                                                {(order.loyaltyPointsEarned ?? 0) > 0 && order.status === 'delivered' && (
                                                     <div style={{
                                                         marginTop: '12px', textAlign: 'center',
                                                         fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600,

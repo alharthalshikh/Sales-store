@@ -19,7 +19,7 @@ export default function OrdersPage() {
     // Get user orders
     const userOrders = state.orders.filter(o => {
         if (!user) return false;
-        return o.userId === user.id;
+        return o.userId === user.uid;
     }).sort((a, b) => b.createdAt - a.createdAt);
 
     // Categories with "All"
@@ -249,6 +249,17 @@ export default function OrdersPage() {
                                             </span>
                                         </div>
 
+                                        {/* نقاط الولاء المكتسبة - تظهر فقط بعد التوصيل */}
+                                        {(order.loyaltyPointsEarned ?? 0) > 0 && order.status === 'delivered' && (
+                                            <div style={{
+                                                marginBottom: '16px', textAlign: 'center',
+                                                fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600,
+                                                background: 'rgba(74, 222, 128, 0.1)', padding: '8px', borderRadius: '12px'
+                                            }}>
+                                                🎁 كسبت {order.loyaltyPointsEarned} نقطة ولاء من هذا الطلب
+                                            </div>
+                                        )}
+
                                         <button
                                             onClick={() => handleRepeatOrder(order)}
                                             style={{
@@ -292,6 +303,6 @@ export default function OrdersPage() {
                     padding-right: 20px;
                 }
             `}</style>
-        </div>
+        </div >
     );
 }

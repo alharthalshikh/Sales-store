@@ -189,7 +189,7 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
                 unreadFavoritesCount: 0
             };
         case 'LOAD_STATE': {
-            console.log('🔄 REDUCER: LOAD_STATE', Object.keys(action.state));
+            // console.log('🔄 REDUCER: LOAD_STATE', Object.keys(action.state));
 
             return {
                 ...state,
@@ -208,7 +208,7 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-    const { user, isAdmin } = useAuth();
+    const { user, isAdmin, userData } = useAuth();
     const [state, baseDispatch] = useReducer(storeReducer, initialState);
     const supabaseInitialized = useRef(false);
 
@@ -217,7 +217,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         baseDispatch(action);
 
         // مزامنة مع Supabase في الخلفية (للبيانات العامة)
-        syncToSupabase(action).catch(err => console.warn('Supabase sync error:', err));
+        // syncToSupabase(action).catch(err => console.warn('Supabase sync error:', err));
     }, [user]); // استقرار أكبر للـ dispatch
 
     // ===== المزامنة مع Supabase (البيانات العامة) =====
@@ -244,17 +244,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     break;
                 case 'ADD_ORDER': {
                     const { error } = await supabase.from('orders').upsert(orderToDb(action.order));
-                    if (error) console.error('❌ فشل حفظ الطلب في السيرفر:', error.message, error.details);
-                    else console.log('✅ تم حفظ الطلب برقم:', action.order.id);
+                    if (error) { /* console.error('❌ فشل حفظ الطلب في السيرفر:', error.message, error.details); */ }
+                    // else console.log('✅ تم حفظ الطلب برقم:', action.order.id);
                     break;
                 }
                 case 'UPDATE_ORDER_STATUS': {
-                    console.log(`📦 جاري تحديث الطلب ${action.orderId} إلى: ${action.status}`);
+                    // console.log(`📦 جاري تحديث الطلب ${action.orderId} إلى: ${action.status}`);
                     const { error } = await supabase.from('orders').update({ status: action.status }).eq('id', action.orderId);
                     if (error) {
-                        console.error('❌ فشل تحديث حالة الطلب في السيرفر:', error.message);
+                        // console.error('❌ فشل تحديث حالة الطلب في السيرفر:', error.message);
                     } else {
-                        console.log('✅ تم تحديث حالة الطلب بنجاح في السيرفر');
+                        // console.log('✅ تم تحديث حالة الطلب بنجاح في السيرفر');
                     }
 
                     // 📦 خصم المخزون تلقائياً عند تأكيد التوصيل (نخصم فقط إذا لم يكن مُوصلاً بالفعل)
@@ -266,7 +266,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                                 quantity: item.quantity,
                             }));
                             baseDispatch({ type: 'DEDUCT_STOCK', items: deductionItems });
-                            console.log('📉 تم خصم المخزون للمنتجات:', deductionItems);
+                            // console.log('📉 تم خصم المخزون للمنتجات:', deductionItems);
 
                             // مزامنة المخزون المحدث مع Supabase
                             for (const item of deductionItems) {
@@ -322,10 +322,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'ADD_DISCOUNT_RULE': {
                     const { error } = await supabase.from('discount_rules').upsert(discountToDb(action.rule));
                     if (error) {
-                        console.error('❌ فشل إضافة قاعدة الخصم للسيرفر:', error.message);
+                        // console.error('❌ فشل إضافة قاعدة الخصم للسيرفر:', error.message);
                         alert(`فشل حفظ التخفيض في السيرفر: ${error.message}. سيتم الحفظ محلياً فقط.`);
                     } else {
-                        console.log('✅ تم حفظ قاعدة الخصم في السيرفر');
+                        // console.log('✅ تم حفظ قاعدة الخصم في السيرفر');
                     }
                     break;
                 }
@@ -344,8 +344,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     const currentRule = state.discountRules.find(r => r.id === action.ruleId);
                     if (currentRule) {
                         const { error } = await supabase.from('discount_rules').update({ active: !currentRule.active }).eq('id', action.ruleId);
-                        if (error) console.error('❌ فشل تحديث حالة التخفيض:', error.message);
-                        else console.log('✅ تم تحديث حالة التخفيض في السيرفر');
+                        if (error) { /* console.error('❌ فشل تحديث حالة التخفيض:', error.message); */ }
+                        // else console.log('✅ تم تحديث حالة التخفيض في السيرفر');
                     }
                     break;
                 }
@@ -365,7 +365,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
                 case 'UPDATE_SETTINGS': {
                     const dbSettings = settingsToDb({ ...state.settings, ...action.settings });
-                    console.log('📡 جاري محاولة الحفظ المطور...', dbSettings);
+                    // console.log('📡 جاري محاولة الحفظ المطور...', dbSettings);
 
                     try {
                         // تقليل وقت الانتظار للمحاولة الأولى لضمان استجابة أسرع في حال وجود خطأ في الأعمدة
@@ -376,7 +376,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                             const { error: fullError } = await supabase.from('settings').upsert(dbSettings, { onConflict: 'id' });
 
                             if (fullError) {
-                                console.warn('⚠️ فشل الحفظ الكامل، جاري محاولة الحفظ الآمن...', fullError.message);
+                                // console.warn('⚠️ فشل الحفظ الكامل، جاري محاولة الحفظ الآمن...', fullError.message);
 
                                 // 2. محاولة الحفظ بدون الميزات الجديدة (التوصيل المطور والولاء)
                                 const level1Safe = { ...dbSettings };
@@ -389,7 +389,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
                                 const { error: err1 } = await supabase.from('settings').upsert(level1Safe, { onConflict: 'id' });
                                 if (!err1) {
-                                    console.log('✅ تم الحفظ بنجاح (النسخة المتوافقة)');
+                                    // console.log('✅ تم الحفظ بنجاح (النسخة المتوافقة)');
                                     return;
                                 }
 
@@ -405,9 +405,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         };
 
                         await Promise.race([performSync(), timeout]);
-                        console.log('✅ انتهت المزامنة بنجاح');
+                        // console.log('✅ انتهت المزامنة بنجاح');
                     } catch (err: any) {
-                        console.error('❌ خطأ في المزامنة:', err.message);
+                        // console.error('❌ خطأ في المزامنة:', err.message);
                         // لا نظهر التنبيه للمستخدم لضمان استمرارية العمل محلياً
                     }
                     break;
@@ -429,10 +429,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     }
                     break;
                 case 'ADD_REWARD': {
-                    console.log('💎 جاري إضافة مكافأة جديدة للسيرفر...', action.reward);
+                    // console.log('💎 جاري إضافة مكافأة جديدة للسيرفر...', action.reward);
                     const { error } = await supabase.from('rewards').upsert(rewardToDb(action.reward));
-                    if (error) console.error('❌ فشل إضافة المكافأة:', error.message);
-                    else console.log('✅ تم حفظ المكافأة بنجاح');
+                    if (error) { /* console.error('❌ فشل إضافة المكافأة:', error.message); */ }
+                    else { /* console.log('✅ تم حفظ المكافأة بنجاح'); */ }
                     break;
                 }
                 case 'UPDATE_REWARD': {
@@ -517,16 +517,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
                 if (added.length === 0 && removed.length === 0) return;
 
-                console.log(`☁️ Syncing Favorites: Added ${added.length}, Removed ${removed.length}`);
+                // console.log(`☁️ Syncing Favorites: Added ${added.length}, Removed ${removed.length}`);
 
                 for (const id of added) {
                     await supabase.from('user_favorites').upsert(
-                        { user_id: user.id, product_id: id },
+                        { user_id: user.uid, product_id: id },
                         { onConflict: 'user_id,product_id' }
                     );
                 }
                 for (const id of removed) {
-                    await supabase.from('user_favorites').delete().eq('user_id', user.id).eq('product_id', id);
+                    await supabase.from('user_favorites').delete().eq('user_id', user.uid).eq('product_id', id);
                 }
                 prevFavs.current = [...state.favorites];
             } catch (e) {
@@ -544,7 +544,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     if (!prev || prev.quantity !== item.quantity) {
                         await supabase.from('user_cart').upsert(
                             {
-                                user_id: user.id,
+                                user_id: user.uid,
                                 product_id: item.product.id,
                                 quantity: item.quantity
                             },
@@ -555,7 +555,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 // حذف
                 for (const prev of prevCart.current) {
                     if (!state.cart.find(i => i.product.id === prev.product.id)) {
-                        await supabase.from('user_cart').delete().eq('user_id', user.id).eq('product_id', prev.product.id);
+                        await supabase.from('user_cart').delete().eq('user_id', user.uid).eq('product_id', prev.product.id);
                     }
                 }
                 prevCart.current = [...state.cart];
@@ -573,49 +573,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // ===== تحميل بيانات المستخدم الخاصة عند تسجيل الدخول =====
     useEffect(() => {
         if (user) {
-            const loadKey = `${user.id}-${isAdmin}`;
+            const loadKey = `${user.uid}-${isAdmin}`;
             // منع التحميل المتكرر لنفس المستخدم
             if (userDataLoaded.current === loadKey) return;
             userDataLoaded.current = loadKey;
 
             const fetchUserData = async () => {
-                console.log('🚀 Starting fetchUserData for user:', user.id, 'isAdmin:', isAdmin);
+                // console.log('🚀 Starting fetchUserData for user:', user.uid, 'isAdmin:', isAdmin);
                 const results: Partial<StoreState> = {};
 
                 try {
-                    const userPhone = user.user_metadata?.phone || user.phone || '';
-                    const userData = {
-                        id: user.id,
-                        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'عميل',
+                    const userPhone = userData?.phone || '';
+                    const profileData = {
+                        id: user.uid,
+                        name: userData?.name || user.displayName || user.email?.split('@')[0] || 'عميل',
                         email: user.email,
                         phone: userPhone,
                         updated_at: new Date().toISOString()
                     };
 
-                    // مزامنة مع جدول users الموحد
-                    const { data: existingUser } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle();
-
-                    if (!existingUser) {
-                        await supabase.from('users').insert({
-                            ...userData,
-                            role: 'customer',
-                            is_active: true,
-                            is_suspended: false
-                        });
-                    } else {
-                        await supabase.from('users').update({
-                            name: userData.name,
-                            email: userData.email,
-                            phone: userData.phone,
-                            updated_at: userData.updated_at
-                        }).eq('id', user.id);
-                    }
+                    // استخدام upsert بدلاً من insert/update لتجنب أخطاء 409
+                    await supabase.from('users').upsert({
+                        ...profileData,
+                        role: isAdmin ? 'admin' : 'customer',
+                        is_active: true,
+                        is_suspended: false
+                    }, { onConflict: 'id' });
 
 
                     // 1. جلب السلة والمفضلة
                     const [favsRes, cartRes] = await Promise.all([
-                        supabase.from('user_favorites').select('product_id').eq('user_id', user.id),
-                        supabase.from('user_cart').select('product_id, quantity').eq('user_id', user.id)
+                        supabase.from('user_favorites').select('product_id').eq('user_id', user.uid),
+                        supabase.from('user_cart').select('product_id, quantity').eq('user_id', user.uid)
                     ]);
 
                     if (favsRes.data) {
@@ -643,13 +632,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     let messagesQuery = supabase.from('messages').select('*');
 
                     if (!isAdmin) {
-                        const userPhone = user.user_metadata?.phone || user.phone;
+                        const userPhone = userData?.phone;
                         if (userPhone) {
-                            ordersQuery = ordersQuery.or(`user_id.eq."${user.id}",customer_phone.eq."${userPhone}"`);
-                            messagesQuery = messagesQuery.or(`user_id.eq."${user.id}",contact_info.eq."${userPhone}"`);
+                            ordersQuery = ordersQuery.or(`user_id.eq."${user.uid}",customer_phone.eq."${userPhone}"`);
+                            messagesQuery = messagesQuery.or(`user_id.eq."${user.uid}",contact_info.eq."${userPhone}"`);
                         } else {
-                            ordersQuery = ordersQuery.eq('user_id', user.id);
-                            messagesQuery = messagesQuery.eq('user_id', user.id);
+                            ordersQuery = ordersQuery.eq('user_id', user.uid);
+                            messagesQuery = messagesQuery.eq('user_id', user.uid);
                         }
                     }
 
@@ -670,18 +659,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                                     ...dbToCustomer(u),
                                     role: u.role || 'customer'
                                 }));
-                                console.log(`✅ Admin fetch: ${allUsers.length} users loaded`);
+                                // console.log(`✅ Admin fetch: ${allUsers.length} users loaded`);
                             }
                         } catch (e) {
-                            console.error('❌ Error fetching users:', e);
+                            // console.error('❌ Error fetching users:', e);
                         }
                     }
 
-                    console.log('📤 Dispatching private user data load...', {
-                        orders: results.orders?.length,
-                        messages: results.messages?.length,
-                        customers: results.customers?.length
-                    });
+                    // console.log('📤 Dispatching private user data load...', {
+                    //     orders: results.orders?.length,
+                    //     messages: results.messages?.length,
+                    //     customers: results.customers?.length
+                    // });
 
                     // تحديث الحالة مرة واحدة فقط بجميع البيانات المجلوبة
                     baseDispatch({ type: 'LOAD_STATE', state: results });
@@ -706,7 +695,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             } catch (e) { console.error("Cookie clear error:", e); }
             baseDispatch({ type: 'LOGOUT' });
         }
-    }, [user?.id, isAdmin, state.products.length]);
+    }, [user?.uid, isAdmin, state.products.length]);
     // ===== تحميل البيانات العامة والمشتركة =====
     useEffect(() => {
         if (supabaseInitialized.current) return;
@@ -720,7 +709,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem('store-cart');
             localStorage.removeItem('store-favorites');
             localStorage.setItem('store-cache-version', CACHE_VERSION);
-            console.log('🧹 تم مسح الكاش القديم');
+            // console.log('🧹 تم مسح الكاش القديم');
         }
 
         loadFromSupabase();
@@ -746,7 +735,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
                 const msg = dbToMessage(payload.new || payload.old);
                 // فلترة: لو كان أدمن يرى الكل، لو كان مستخدم يرى رسائله فقط
-                if (isAdmin || (user && msg.userId === user.id)) {
+                if (isAdmin || (user && msg.userId === user.uid)) {
                     if (payload.eventType === 'INSERT') baseDispatch({ type: 'ADD_MESSAGE', message: msg });
                     else if (payload.eventType === 'UPDATE') baseDispatch({ type: 'MARK_MESSAGE_READ', messageId: msg.id });
                 }
@@ -754,7 +743,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
                 const order = dbToOrder(payload.new || payload.old);
                 // فلترة: لو كان أدمن يرى الكل، لو كان مستخدم يرى طلباته فقط
-                if (isAdmin || (user && order.userId === user.id)) {
+                if (isAdmin || (user && order.userId === user.uid)) {
                     if (payload.eventType === 'INSERT') baseDispatch({ type: 'ADD_ORDER', order });
                     else if (payload.eventType === 'UPDATE') baseDispatch({ type: 'UPDATE_ORDER_STATUS', orderId: order.id, status: order.status });
                     else if (payload.eventType === 'DELETE') baseDispatch({ type: 'DELETE_ORDER', orderId: order.id });
@@ -774,7 +763,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     async function loadFromSupabase() {
         try {
-            console.log('📡 جاري جلب البيانات العامة...');
+            // console.log('📡 جاري جلب البيانات العامة...');
             const tables = ['categories', 'products', 'reviews', 'discount_rules', 'settings', 'banners', 'rewards'];
 
             const loadedState: Partial<StoreState> = {};
@@ -844,7 +833,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     // إذا كان السيرفر لا يحتوي على تخفيضات ولكن محلياً توجد، استخدم المحلية مؤقتاً
                     if ((!loadedState.discountRules || loadedState.discountRules.length === 0) && localParsed.discountRules?.length > 0) {
                         loadedState.discountRules = localParsed.discountRules;
-                        console.log('♻️ Recovered discount rules from LocalStorage');
+                        // console.log('♻️ Recovered discount rules from LocalStorage');
                     }
                     if ((!loadedState.rewards || loadedState.rewards.length === 0) && localParsed.rewards?.length > 0) {
                         loadedState.rewards = localParsed.rewards;
@@ -856,9 +845,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             loadedState.isDataInitialized = true;
 
             baseDispatch({ type: 'LOAD_STATE', state: loadedState });
-            seedSupabase();
+            // seedSupabase(); // تم إيقاف التعبئة التلقائية لضمان بقاء المتجر فارغاً بناءً على طلبك
         } catch (err) {
-            console.error('❌ Error in loadFromSupabase:', err);
+            // console.error('❌ Error in loadFromSupabase:', err);
             baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
             loadFromLocalStorage();
         }
