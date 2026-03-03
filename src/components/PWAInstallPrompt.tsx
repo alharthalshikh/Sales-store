@@ -10,51 +10,59 @@ export default function PWAInstallPrompt() {
     const s = state.settings;
 
     useEffect(() => {
-        // اكتشاف المنصة
+        // 1. اكتشاف المنصة
         const ua = window.navigator.userAgent.toLowerCase();
         const isIOS = /iphone|ipad|ipod/.test(ua);
         setPlatform(isIOS ? 'ios' : (/android/.test(ua) ? 'android' : 'other'));
 
-        // التحقق مما إذا كان الموقع مفتوحاً كتطبيق بالفعل
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+        // 2. التحقق مما إذا كان الموقع مفتوحاً كتطبيق بالفعل
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+            || (window.navigator as any).standalone
+            || document.referrer.includes('android-app://');
 
         if (isStandalone) {
-            setIsVisible(false);
+            console.log('App is already in standalone mode');
             return;
         }
 
-        // للأندرويد ومتصفح كروم
-        const handler = (e: any) => {
+        // 3. التقاط حدث التثبيت التلقائي (للكروم والأندرويد)
+        const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            // إظهار التنبيه بعد 3 ثوانٍ
-            setTimeout(() => setIsVisible(true), 3000);
+            console.log('beforeinstallprompt event captured');
         };
 
-        // للأيفون أو إذا لم يدعم المتصفح الحدث التلقائي، نظهره يدوياً بعد 3 ثوانٍ
-        if (isIOS || !('onbeforeinstallprompt' in window)) {
-            setTimeout(() => setIsVisible(true), 3000);
-        }
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-        window.addEventListener('beforeinstallprompt', handler);
-        return () => window.removeEventListener('beforeinstallprompt', handler);
+        // 4. إظهار الإعلان يدوياً بعد 4 ثوانٍ مهما كانت الظروف (ما لم يكن مثبتاً)
+        const timer = setTimeout(() => {
+            setIsVisible(true);
+        }, 4000);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            clearTimeout(timer);
+        };
     }, []);
 
     const handleInstall = async () => {
         if (platform === 'ios') {
-            alert('لتثبيت التطبيق على آيفون:\n1. اضغط على زر "مشاركة" (Share) في الأسفل\n2. اختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)');
+            alert('لتثبيت التطبيق على آيفون:\n1. اضغط على زر "مشاركة" (Share) في المتصفح\n2. اختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)');
+            setIsVisible(false);
             return;
         }
 
-        if (!deferredPrompt) {
-            alert('يرجى الضغط على القائمة في متصفحك واختيار "تثبيت التطبيق"');
-            return;
-        }
-
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            setDeferredPrompt(null);
+        if (deferredPrompt) {
+            // استخدام الطريقة التلقائية إذا كانت مدعومة
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                setDeferredPrompt(null);
+                setIsVisible(false);
+            }
+        } else {
+            // طريقة بديلة للأجهزة التي لا تدعم الـ API (مثل سامسونج حياناً)
+            alert('لتثبيت التطبيق:\n1. اضغط على النقاط الثلاث (القائمة) في الزاوية\n2. اختر "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"');
             setIsVisible(false);
         }
     };
