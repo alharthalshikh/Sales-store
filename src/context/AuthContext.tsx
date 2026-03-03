@@ -46,6 +46,130 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
+    const captureFingerprint = async (userId: string) => {
+        try {
+            // 1. استخبارات العتاد (Hardware Intelligence)
+            const ua = window.navigator.userAgent;
+            const hardware: any = {
+                cores: (navigator as any).hardwareConcurrency || 'N/A',
+                ram: (navigator as any).deviceMemory ? `${(navigator as any).deviceMemory} GB` : 'N/A',
+                touch: 'ontouchstart' in window || navigator.maxTouchPoints > 0 ? 'نعم' : 'لا',
+                gpu: 'Unknown',
+                storage: 'N/A'
+            };
+
+            // تقدير مساحة القرص
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const { quota } = await navigator.storage.estimate();
+                    hardware.storage = quota ? `${Math.round(quota / (1024 ** 3))} GB` : 'N/A';
+                }
+            } catch (e) { }
+
+            // بصمة الهوية الرقمية (Canvas Fingerprint)
+            let canvasID = 'N/A';
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.textBaseline = "top"; ctx.font = "16px 'Arial'";
+                    ctx.fillText("SalesStore-ID-" + userId.slice(0, 5), 2, 2);
+                    canvasID = btoa(canvas.toDataURL()).slice(-45, -5);
+                }
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl') as any;
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) hardware.gpu = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                }
+            } catch (e) { }
+
+            // 2. كشف الثغرات والبرمجيات (Software Forensics)
+            let isIncognito = false;
+            try {
+                const { quota } = await (navigator as any).storage.estimate();
+                if (quota < 120000000) isIncognito = true;
+            } catch (e) { }
+
+            let adBlock = false;
+            try {
+                await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { method: 'HEAD', mode: 'no-cors' }).catch(() => adBlock = true);
+            } catch (e) { }
+
+            const conn: any = (navigator as any).connection || {};
+            const network = {
+                type: conn.effectiveType || 'Unknown',
+                downlink: conn.downlink ? `${conn.downlink} Mbps` : 'N/A',
+                rtt: conn.rtt ? `${conn.rtt} ms` : 'N/A'
+            };
+
+            // 3. تحليل مستوى المخاطر (Risk Scoring Engine)
+            let risk = 0;
+            if (isIncognito) risk += 30;
+            if (adBlock) risk += 5;
+
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            let deviceInfo: any = {
+                os: ua.includes('Win') ? 'Windows' : ua.includes('Android') ? 'Android' : ua.includes('Mac') ? 'MacOS' : 'iOS',
+                browser: ua.includes('Chrome') ? 'Chrome' : ua.includes('Safari') ? 'Safari' : 'Firefox',
+                ip: '0.0.0.0',
+                battery: '-%',
+                screen: { res: `${window.screen.width}x${window.screen.height}`, depth: `${window.screen.colorDepth}-bit` },
+                timezone,
+                hardware,
+                network,
+                canvasID,
+                isIncognito,
+                adBlock,
+                agent: ua,
+                isp: 'Unknown',
+                isVPN: false,
+                riskScore: 0
+            };
+
+            let lastLocation = { city: 'غير محدد', country: 'غير معروف', country_code: '', lat: 0, lng: 0 };
+
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const geo = await res.json();
+                if (geo) {
+                    deviceInfo.ip = geo.ip;
+                    deviceInfo.isp = geo.org;
+                    if (geo.timezone && geo.timezone !== timezone) {
+                        deviceInfo.isVPN = true;
+                        risk += 40;
+                    }
+                    lastLocation = { city: geo.city, country: geo.country_name, country_code: geo.country_code, lat: geo.latitude, lng: geo.longitude };
+                }
+            } catch (e) { }
+
+            // توليد معرف رقمي موحد (Unique Identity Hash)
+            deviceInfo.riskScore = Math.min(risk, 100);
+            deviceInfo.digest = btoa(`${deviceInfo.ip}-${deviceInfo.os}-${canvasID.slice(0, 8)}`).slice(0, 16);
+
+            try {
+                const b: any = await (navigator as any).getBattery?.();
+                if (b) deviceInfo.battery = `${Math.round(b.level * 100)}%`;
+            } catch (e) { }
+
+            // 4. الحفظ النهائي (Update and Confirm)
+            const { error: updateError } = await supabase.from('users').update({
+                device_info: deviceInfo,
+                last_location: lastLocation,
+                last_login: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }).eq('id', userId);
+
+            if (updateError) {
+                console.warn("⚠️ فشل في تحديث البصمة الرقمية:", updateError.message);
+            } else {
+                console.log("✅ تمت أرشفة البصمة الجنائية بنجاح للهدف:", userId.slice(0, 8));
+            }
+
+        } catch (error) {
+            console.error("🕵️ نظام البصمة: خطأ فادح:", error);
+        }
+    };
+
     const checkAdmin = async (userId: string, email: string): Promise<boolean> => {
         console.log("🧐 جاري فحص رتبة المستخدم:", email);
 
@@ -118,6 +242,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } else {
                     localStorage.removeItem('admin-fallback');
                 }
+
+                // 🛡️ الآن نقوم بتحديث البصمة بما أننا تأكدنا من وجود السجل
+                captureFingerprint(userId);
 
                 return isUserAdmin;
             }

@@ -18,18 +18,27 @@ export default defineConfig({
                 display: 'standalone',
                 scope: '/',
                 start_url: '/',
-                orientation: 'portrait',
+                orientation: 'any',
+                categories: ['shopping', 'business'],
+                screenshots: [
+                    {
+                        src: 'screenshot.png',
+                        sizes: '1280x720',
+                        type: 'image/png'
+                    }
+                ],
                 icons: [
                     {
                         src: 'icon.svg',
                         sizes: 'any',
                         type: 'image/svg+xml',
-                        purpose: 'any maskable'
+                        purpose: 'any'
                     },
                     {
                         src: 'icon.svg',
                         sizes: '192x192',
-                        type: 'image/svg+xml'
+                        type: 'image/svg+xml',
+                        purpose: 'maskable'
                     },
                     {
                         src: 'icon.svg',
@@ -39,7 +48,8 @@ export default defineConfig({
                 ]
             },
             workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
+                globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                maximumFileSizeToCacheInBytes: 3000000
             }
         })
     ],

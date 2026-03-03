@@ -289,75 +289,154 @@ export default function AdminUsers() {
             {/* Device Info Modal */}
             {selectedUser && (
                 <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
-                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px' }}>
-                        <div className="modal-header">
-                            <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Fingerprint size={24} color="var(--accent)" /> بصمة الأمان: {selectedUser.name}
-                            </h2>
+                    <div className="modal cyber-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '980px', background: '#050507', border: '1px solid #1a1a2e', boxShadow: '0 0 50px rgba(200, 134, 10, 0.1)' }}>
+                        <div className="modal-header" style={{ borderBottom: '1px solid #1a1a2e', padding: '20px 24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <div className="radar-box">
+                                    <div className="radar-ping"></div>
+                                    <Shield size={24} color="var(--accent)" />
+                                </div>
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#fff' }}>مركز الأمان والتحليل الجنائي (Security Forensic Hub)</h2>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600 }}>المعرف الرقمي الدائم: {selectedUser.device_info?.digest || 'N/A'}</div>
+                                </div>
+                            </div>
                             <button className="nav-icon-btn" onClick={() => setSelectedUser(null)}><X size={20} /></button>
                         </div>
-                        <div className="modal-body">
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                                <div style={{ background: 'var(--surface)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', color: 'var(--accent)', fontWeight: 700 }}>
-                                        <Smartphone size={20} /> تفاصيل الجهاز
+                        <div className="modal-body" style={{ padding: '24px', maxHeight: '80vh', overflowY: 'auto' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '30px' }}>
+                                <div className="stat-pill">
+                                    <label>مؤشر مستوى المخاطر:</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div className="risk-gauge">
+                                            <div className="risk-fill" style={{ width: `${selectedUser.device_info?.riskScore || 0}%`, background: (selectedUser.device_info?.riskScore || 0) > 60 ? '#f44336' : (selectedUser.device_info?.riskScore || 0) > 30 ? '#ff9800' : '#4caf50' }}></div>
+                                        </div>
+                                        <span style={{ fontWeight: 800, color: (selectedUser.device_info?.riskScore || 0) > 60 ? '#f44336' : (selectedUser.device_info?.riskScore || 0) > 30 ? '#ff9800' : '#4caf50' }}>
+                                            {selectedUser.device_info?.riskScore || 0}%
+                                        </span>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-light)' }}>نظام التشغيل:</span>
-                                            <span>{selectedUser.device_info?.os || 'غير متوفر'}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-light)' }}>المتصفح:</span>
-                                            <span>{selectedUser.device_info?.browser || 'غير متوفر'}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-light)' }}>عنوان IP:</span>
-                                            <span dir="ltr">{selectedUser.device_info?.ip || '0.0.0.0'}</span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Battery size={16} color="var(--success)" />
-                                            <span>مستوى البطارية: {selectedUser.device_info?.battery || '-%'}</span>
+                                </div>
+                                <div className={`security-badge ${selectedUser.device_info?.isIncognito ? 'danger' : 'success'}`}>
+                                    {selectedUser.device_info?.isIncognito ? '🕵️ وضع التخفي نشط' : '✅ تصفح طبيعي'}
+                                </div>
+                                <div className={`security-badge ${selectedUser.device_info?.isVPN ? 'danger' : 'success'}`}>
+                                    {selectedUser.device_info?.isVPN ? '🛡️ اتصال مشفر (VPN)' : '✅ اتصال مباشر'}
+                                </div>
+                                <div className={`security-badge ${selectedUser.device_info?.adBlock ? 'warning' : 'success'}`}>
+                                    {selectedUser.device_info?.adBlock ? '🚫 حاجب إعلانات نشط' : '✅ لا يوجد حاجب'}
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+
+                                {/* 1. تفاصيل العتاد العميق */}
+                                <div className="cyber-card">
+                                    <div className="cyber-card-title"><Fingerprint size={18} /> الهوية الرقمية (Digital DNA)</div>
+                                    <div className="cyber-list">
+                                        <div className="cyber-item"><span>نظام التشغيل:</span> <strong>{selectedUser.device_info?.os}</strong></div>
+                                        <div className="cyber-item"><span>المتصفح:</span> <strong>{selectedUser.device_info?.browser}</strong></div>
+                                        <div className="cyber-item"><span>المعالج:</span> <strong>{selectedUser.device_info?.hardware?.cores} Logic Cores</strong></div>
+                                        <div className="cyber-item"><span>الذاكرة:</span> <strong>{selectedUser.device_info?.hardware?.ram}</strong></div>
+                                        <div className="cyber-item"><span>مساحة التخزين:</span> <strong>{selectedUser.device_info?.hardware?.storage}</strong></div>
+                                        <div className="cyber-item"><span>الرسوميات:</span> <strong style={{ fontSize: '0.65rem', color: '#888' }}>{selectedUser.device_info?.hardware?.gpu}</strong></div>
+                                        <div className="cyber-item" style={{ marginTop: '10px', background: '#000', padding: '10px', borderRadius: '10px', border: '1px solid #333' }}>
+                                            <div style={{ fontSize: '0.65rem', color: '#555', marginBottom: '4px' }}>ULTIMATE CANVAS SIGNATURE:</div>
+                                            <div style={{ fontSize: '0.55rem', color: 'var(--accent)', wordBreak: 'break-all', fontFamily: 'monospace' }}>{selectedUser.device_info?.canvasID || 'N/A'}</div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div style={{ background: 'var(--surface)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', color: 'var(--accent)', fontWeight: 700 }}>
-                                        <MapPin size={20} /> الموقع والنشاط
+                                {/* 2. بيانات الشبكة والأمان */}
+                                <div className="cyber-card">
+                                    <div className="cyber-card-title"><Activity size={18} /> ذكاء الاتصال (Connection Intel)</div>
+                                    <div className="cyber-list">
+                                        <div className="cyber-item"><span>عنوان IP:</span> <strong dir="ltr" style={{ color: 'var(--accent)' }}>{selectedUser.device_info?.ip}</strong></div>
+                                        <div className="cyber-item"><span>المزود (ISP):</span> <strong style={{ fontSize: '0.75rem' }}>{selectedUser.device_info?.isp}</strong></div>
+                                        <div className="cyber-item"><span>سرعة النت:</span> <strong>{selectedUser.device_info?.network?.downlink}</strong></div>
+                                        <div className="cyber-item"><span>تأخير الاستجابة:</span> <strong>{selectedUser.device_info?.network?.rtt}</strong></div>
+                                        <div className="cyber-item"><span>دقة الشاشة:</span> <strong>{selectedUser.device_info?.screen?.res}</strong></div>
+                                        <div className="cyber-item"><span>البطارية:</span> <strong style={{ color: 'var(--success)' }}>{selectedUser.device_info?.battery}</strong></div>
+                                        <div className="cyber-item"><span>الحالة الآن:</span>
+                                            {(() => {
+                                                const isOnline = selectedUser.last_login && (Date.now() - new Date(selectedUser.last_login).getTime() < 300000);
+                                                return (
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isOnline ? 'var(--success)' : '#666', fontWeight: 800 }}>
+                                                        <span className={isOnline ? 'online-pulse' : ''} style={{ width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--success)' : '#444' }}></span>
+                                                        {isOnline ? 'نشط حالياً' : 'غير متصل'}
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-light)' }}>آخر تواجد:</span>
-                                            <span>{selectedUser.last_login ? new Date(selectedUser.last_login).toLocaleString('ar-SA') : 'لم يتم التسجيل'}</span>
+                                </div>
+
+                                {/* 3. الموقع الجغرافي */}
+                                <div className="cyber-card">
+                                    <div className="cyber-card-title"><Globe size={18} /> الاستهداف الجغرافي (Geo-Spatial)</div>
+                                    <div className="cyber-list">
+                                        <div className="cyber-item">
+                                            <span>الدولة:</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                {selectedUser.last_location?.country_code && (
+                                                    <img src={`https://flagcdn.com/24x18/${selectedUser.last_location.country_code.toLowerCase()}.png`} alt="" style={{ borderRadius: '2px' }} />
+                                                )}
+                                                <strong>{selectedUser.last_location?.country}</strong>
+                                            </span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-light)' }}>الموقع التقريبي:</span>
-                                            <span>{selectedUser.last_location?.city || 'غير محدد'}</span>
+                                        <div className="cyber-item"><span>المدينة:</span> <strong>{selectedUser.last_location?.city}</strong></div>
+                                        <div className="cyber-item"><span>المنطقة الزمنية:</span> <strong>{selectedUser.device_info?.timezone}</strong></div>
+                                        <div className="cyber-item"><span>الحالة الآن:</span>
+                                            {(() => {
+                                                const isOnline = selectedUser.last_login && (Date.now() - new Date(selectedUser.last_login).getTime() < 300000);
+                                                return (
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isOnline ? 'var(--success)' : '#666', fontWeight: 800 }}>
+                                                        <span className={isOnline ? 'online-pulse' : ''} style={{ width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? 'var(--success)' : '#444' }}></span>
+                                                        {isOnline ? 'نشط الآن' : 'غير متصل'}
+                                                    </span>
+                                                );
+                                            })()}
                                         </div>
-                                        <div style={{ marginTop: '10px' }}>
-                                            <a
-                                                href={`https://www.google.com/maps?q=${selectedUser.last_location?.lat},${selectedUser.last_location?.lng}`}
-                                                target="_blank"
-                                                className="btn btn-primary"
-                                                style={{ width: '100%', padding: '8px', fontSize: '0.8rem' }}
-                                            >
-                                                <Globe size={16} /> فتح في الموقع الجغرافي
+                                        <div style={{ marginTop: '15px' }}>
+                                            <a href={`https://www.google.com/maps?q=${selectedUser.last_location?.lat},${selectedUser.last_location?.lng}`}
+                                                target="_blank" rel="noreferrer" className="cyber-btn" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                <MapPin size={16} /> فتح الرادار الجغرافي
                                             </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style={{ marginTop: '20px', padding: '16px', background: 'rgba(244, 67, 54, 0.05)', borderRadius: '12px', border: '1px solid rgba(244, 67, 54, 0.1)' }}>
-                                <div style={{ fontWeight: 700, color: 'var(--error)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                    <Activity size={18} /> نصيحة أمان
-                                </div>
-                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                    إذا تم رصد دخول من جهاز غريب أو موقع غير معتاد، يفضل التواصل مع العميل أو حظر الحساب مؤقتاً لحين التحقق.
-                                </p>
+                            <div style={{ marginTop: '20px', padding: '12px', background: '#000', borderRadius: '10px', border: '1px solid #1a1a2e' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#555', marginBottom: '5px' }}>FULL USER AGENT STRING:</div>
+                                <div style={{ fontSize: '0.65rem', color: '#888', fontFamily: 'monospace', wordBreak: 'break-all' }}>{selectedUser.device_info?.agent}</div>
                             </div>
                         </div>
+
+                        <style>{`
+                            .cyber-modal { font-family: 'Segoe UI', sans-serif; border-radius: 20px; overflow: hidden; }
+                            .radar-box { position: relative; width: 44px; height: 44px; background: rgba(200, 134, 10, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(200, 134, 10, 0.3); }
+                            .radar-ping { position: absolute; width: 100%; height: 100%; border: 2px solid var(--accent); border-radius: 50%; animation: ping 2s infinite; }
+                            @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+                            .stat-pill { background: #0c0c11; border: 1px solid #1a1a2e; padding: 10px 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 5px; }
+                            .stat-pill label { font-size: 0.7rem; color: #666; font-weight: 700; text-transform: uppercase; }
+                            .risk-gauge { width: 100px; height: 6px; background: #1a1a24; border-radius: 3px; overflow: hidden; }
+                            .risk-fill { height: 100%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+                            .security-badge { padding: 8px 16px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; }
+                            .security-badge.success { background: rgba(76, 175, 80, 0.1); color: #4caf50; border-color: rgba(76, 175, 80, 0.2); }
+                            .security-badge.danger { background: rgba(244, 67, 54, 0.1); color: #f44336; border-color: rgba(244, 67, 54, 0.2); animation: flash-danger 1.5s infinite; }
+                            .security-badge.warning { background: rgba(255, 152, 0, 0.1); color: #ff9800; border-color: rgba(255, 152, 0, 0.2); }
+                            @keyframes flash-danger { 50% { opacity: 0.6; box-shadow: 0 0 15px rgba(244, 67, 54, 0.3); } }
+                            .security-badge.info { background: rgba(33, 150, 243, 0.1); color: #2196f3; border-color: rgba(33, 150, 243, 0.2); }
+                            .cyber-card { background: #0c0c11; border: 1px solid #1a1a2e; border-radius: 20px; padding: 22px; transition: all 0.3s; }
+                            .cyber-card-title { color: var(--accent); font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1.5px; }
+                            .cyber-list { display: flex; flex-direction: column; gap: 12px; }
+                            .cyber-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; border-bottom: 1px solid #161625; padding-bottom: 10px; }
+                            .cyber-item span { color: #666; font-weight: 600; }
+                            .cyber-item strong { color: #eee; }
+                            .cyber-btn { background: var(--gradient); color: #000; border: none; border-radius: 12px; padding: 14px; font-weight: 800; transition: all 0.3s; width: 100%; cursor: pointer; }
+                            .cyber-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(200,134,10,0.3); }
+                            .online-pulse { animation: pulse-green 2s infinite; }
+                            @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+                        `}</style>
                     </div>
                 </div>
             )}
