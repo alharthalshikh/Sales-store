@@ -71,7 +71,7 @@ export default function CheckoutPage() {
                 setForm(prev => ({ ...prev, address: data.display_name }));
             }
         } catch (error) {
-            console.error('Reverse geocoding error:', error);
+            // console.error('Reverse geocoding error:', error);
         } finally {
             setLoadingAddress(false);
         }
@@ -307,7 +307,7 @@ export default function CheckoutPage() {
                         );
                         localStorage.setItem(`redeemed_coupons_${userPhone}`, JSON.stringify(updated));
                     } catch (e) {
-                        console.error('Failed to update coupon status in localStorage:', e);
+                        // console.error('Failed to update coupon status in localStorage:', e);
                     }
                 }
             }

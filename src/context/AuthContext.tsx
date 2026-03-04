@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // }
 
         } catch (error) {
-            console.error("🕵️ نظام البصمة: خطأ فادح:", error);
+            // console.error("🕵️ نظام البصمة: خطأ فادح:", error);
         }
     };
 
@@ -263,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             return isMasterAdmin;
         } catch (e) {
-            console.error("❌ Error checking admin:", e);
+            // console.error("❌ Error checking admin:", e);
             return isMasterAdmin;
         }
     };
@@ -381,7 +381,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             return { success: false, error: 'حدث خطأ أثناء إنشاء الحساب' };
         } catch (e: any) {
-            console.error("❌ Firebase SignUp Error:", e.code, e);
+            // console.error("❌ Firebase SignUp Error:", e.code, e);
             return { success: false, error: translateAuthError(e.code) };
         }
     };
@@ -398,7 +398,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await signOut(auth);
         } catch (e) {
-            console.error("Firebase Sign out error:", e);
+            // console.error("Firebase Sign out error:", e);
         }
     };
 

@@ -437,12 +437,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
                 case 'UPDATE_REWARD': {
                     const { error } = await supabase.from('rewards').upsert(rewardToDb(action.reward));
-                    if (error) console.error('❌ فشل تحديث المكافأة:', error.message);
+                    if (error) { /* console.error('❌ فشل تحديث المكافأة:', error.message); */ }
                     break;
                 }
                 case 'DELETE_REWARD': {
                     const { error } = await supabase.from('rewards').delete().eq('id', action.rewardId);
-                    if (error) console.error('❌ فشل حذف المكافأة:', error.message);
+                    if (error) { /* console.error('❌ فشل حذف المكافأة:', error.message); */ }
                     break;
                 }
                 case 'BAN_CUSTOMER': {
@@ -455,7 +455,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
                 case 'DELETE_CUSTOMER': {
                     const { error } = await supabase.from('users').delete().eq('phone', action.phone);
-                    if (error) console.error('❌ فشل حذف العميل:', error.message);
+                    if (error) { /* console.error('❌ فشل حذف العميل:', error.message); */ }
                     break;
                 }
                 case 'CLEAR_ORDERS':
@@ -496,7 +496,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     break;
             }
         } catch (err) {
-            console.warn('Supabase sync failed (General):', err);
+            // console.warn('Supabase sync failed (General):', err);
         }
     }
 
@@ -530,7 +530,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
                 prevFavs.current = [...state.favorites];
             } catch (e) {
-                console.error("❌ Error syncing favorites:", e);
+                // console.error("❌ Error syncing favorites:", e);
             }
         };
 
@@ -560,7 +560,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
                 prevCart.current = [...state.cart];
             } catch (e) {
-                console.error("❌ Error syncing cart:", e);
+                // console.error("❌ Error syncing cart:", e);
             }
         };
 
@@ -675,7 +675,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     // تحديث الحالة مرة واحدة فقط بجميع البيانات المجلوبة
                     baseDispatch({ type: 'LOAD_STATE', state: results });
                 } catch (err) {
-                    console.warn('Error fetching private user data:', err);
+                    // console.warn('Error fetching private user data:', err);
                 }
             };
 
@@ -692,7 +692,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 document.cookie.split(";").forEach((c) => {
                     document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
                 });
-            } catch (e) { console.error("Cookie clear error:", e); }
+            } catch (e) { /* console.error("Cookie clear error:", e); */ }
             baseDispatch({ type: 'LOGOUT' });
         }
     }, [user?.uid, isAdmin, state.products.length]);
@@ -789,7 +789,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
             results.forEach(({ table, data, error }) => {
                 if (error) {
-                    console.warn(`⚠️ Warning fetching ${table}:`, error);
+                    // console.warn(`⚠️ Warning fetching ${table}:`, error);
                     return;
                 }
                 if (!data) return;

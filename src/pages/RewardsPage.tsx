@@ -103,7 +103,7 @@ export default function RewardsPage() {
                 document.execCommand('copy');
                 return true;
             } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
+                // console.error('Fallback: Oops, unable to copy', err);
                 return false;
             } finally {
                 textArea.remove();

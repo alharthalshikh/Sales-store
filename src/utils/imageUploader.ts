@@ -88,7 +88,7 @@ export async function uploadImage(
             return null;
         }
 
-        console.log('📦 استجابة الرفع ناجحة، جاري الحصول على الرابط...');
+        // console.log('📦 استجابة الرفع ناجحة، جاري الحصول على الرابط...');
 
         // الحصول على الرابط العام
         const { data: urlData } = supabase.storage

@@ -82,7 +82,7 @@ export default function TrackOrderPage() {
                 setCloudOrders(data.map(dbToOrder));
             }
         } catch (err) {
-            console.error('Track search error:', err);
+            // console.error('Track search error:', err);
         } finally {
             setLoading(false);
             setSearched(true);
