@@ -86,6 +86,7 @@ export default function AdminPage() {
     const [showDiscountModal, setShowDiscountModal] = useState(false);
     const [editingDiscountId, setEditingDiscountId] = useState<string | null>(null);
     const [discountForm, setDiscountForm] = useState<Partial<DiscountRule>>({ name: '', type: 'percentage', value: 0, active: true });
+    const [discountSearchQuery, setDiscountSearchQuery] = useState('');
 
     // Review states
     const [showReviewModal, setShowReviewModal] = useState(false);
@@ -805,22 +806,36 @@ export default function AdminPage() {
     };
 
     const renderDiscounts = () => {
-        const rewardCoupons = state.discountRules.filter(r => r.userId || r.name.startsWith('REW-'));
-        const generalRules = state.discountRules.filter(r => !r.userId && !r.name.startsWith('REW-'));
+        const rewardCoupons = state.discountRules
+            .filter(r => r.userId || r.name.startsWith('REW-'))
+            .filter(r => r.name.toLowerCase().includes(discountSearchQuery.toLowerCase()));
+
+        const generalRules = state.discountRules
+            .filter(r => !r.userId && !r.name.startsWith('REW-'))
+            .filter(r => r.name.toLowerCase().includes(discountSearchQuery.toLowerCase()));
 
         return (
             <div>
                 <div className="admin-section-header">
                     <h3>🏷️ إدارة التخفيضات</h3>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                        <div className="tabs-mini" style={{ display: 'flex', background: 'var(--bg)', padding: 4, borderRadius: 12, border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div className="tabs-mini" style={{
+                            display: 'flex',
+                            background: 'rgba(255,255,255,0.03)',
+                            backdropFilter: 'blur(10px)',
+                            padding: 4,
+                            borderRadius: 14,
+                            border: '1px solid var(--border)',
+                            gap: 4
+                        }}>
                             <button
                                 onClick={() => setDiscountSubTab('rules')}
                                 style={{
-                                    padding: '6px 16px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700,
-                                    background: discountSubTab === 'rules' ? 'var(--accent)' : 'transparent',
-                                    color: discountSubTab === 'rules' ? '#fff' : 'var(--text-secondary)',
-                                    border: 'none', cursor: 'pointer', transition: '0.3s'
+                                    padding: '8px 20px', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700,
+                                    background: discountSubTab === 'rules' ? 'var(--gradient)' : 'transparent',
+                                    color: discountSubTab === 'rules' ? '#1a1408' : 'var(--text-secondary)',
+                                    boxShadow: discountSubTab === 'rules' ? '0 4px 12px var(--accent-glow)' : 'none',
+                                    border: 'none', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
                                 قواعد الخصم ({generalRules.length})
@@ -828,20 +843,62 @@ export default function AdminPage() {
                             <button
                                 onClick={() => setDiscountSubTab('customer_coupons')}
                                 style={{
-                                    padding: '6px 16px', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700,
-                                    background: discountSubTab === 'customer_coupons' ? '#9c27b0' : 'transparent',
+                                    padding: '8px 20px', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700,
+                                    background: discountSubTab === 'customer_coupons' ? 'linear-gradient(135deg, #9c27b0, #673ab7)' : 'transparent',
                                     color: discountSubTab === 'customer_coupons' ? '#fff' : 'var(--text-secondary)',
-                                    border: 'none', cursor: 'pointer', transition: '0.3s'
+                                    boxShadow: discountSubTab === 'customer_coupons' ? '0 4px 12px rgba(156, 39, 176, 0.3)' : 'none',
+                                    border: 'none', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
                                 كوبونات العملاء ({rewardCoupons.length})
                             </button>
                         </div>
-                        <button className="btn btn-primary" onClick={() => {
-                            setEditingDiscountId(null);
-                            setDiscountForm({ name: '', type: 'percentage', value: 0, active: true });
-                            setShowDiscountModal(true);
-                        }}>
+
+                        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                            <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)', opacity: 0.5, pointerEvents: 'none' }}>
+                                <Globe size={16} />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="بحث عن كود..."
+                                value={discountSearchQuery}
+                                onChange={(e) => setDiscountSearchQuery(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 16px',
+                                    paddingRight: '36px',
+                                    borderRadius: '14px',
+                                    border: '1px solid var(--border)',
+                                    background: 'rgba(255,255,255,0.02)',
+                                    color: 'var(--text)',
+                                    fontSize: '0.9rem',
+                                    outline: 'none',
+                                    transition: 'all 0.3s'
+                                }}
+                            />
+                        </div>
+
+                        <button
+                            className="btn"
+                            style={{
+                                background: 'var(--gradient)',
+                                color: '#1a1408',
+                                fontWeight: 800,
+                                borderRadius: '14px',
+                                padding: '10px 20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                border: 'none',
+                                boxShadow: '0 4px 15px var(--accent-glow)',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s'
+                            }}
+                            onClick={() => {
+                                setEditingDiscountId(null);
+                                setDiscountForm({ name: '', type: 'percentage', value: 0, active: true });
+                                setShowDiscountModal(true);
+                            }}>
                             <Plus size={18} /> إضافة تخفيض
                         </button>
                     </div>
