@@ -29,7 +29,7 @@ export default function PWAInstallPrompt() {
         const handleAppInstalled = () => {
             localStorage.setItem('pwa_installed', 'true');
             setIsVisible(false);
-            console.log('✅ تم تثبيت التطبيق بنجاح');
+            // console.log('✅ تم تثبيت التطبيق بنجاح');
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
