@@ -8,7 +8,7 @@ export async function setupAdmin() {
     const ADMIN_PASSWORD = '77927792h';
     const ADMIN_NAME = 'الحارث الشيخ';
 
-    console.log('🚀 جاري إنشاء حساب الأدمن...');
+    // console.log('🚀 جاري إنشاء حساب الأدمن...');
 
     const { data, error } = await supabase.auth.signUp({
         email: ADMIN_EMAIL,
@@ -17,13 +17,13 @@ export async function setupAdmin() {
 
     if (error) {
         if (error.message.includes('already registered')) {
-            console.log('✅ المستخدم موجود مسبقاً، جاري تسجيل الدخول...');
+            // console.log('✅ المستخدم موجود مسبقاً، جاري تسجيل الدخول...');
             const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
                 email: ADMIN_EMAIL,
                 password: ADMIN_PASSWORD,
             });
             if (loginError) {
-                console.error('❌ خطأ في تسجيل الدخول:', loginError.message);
+                // console.error('❌ خطأ في تسجيل الدخول:', loginError.message);
                 return { success: false, error: loginError.message };
             }
             if (loginData.user) {
@@ -35,11 +35,11 @@ export async function setupAdmin() {
                     role: 'admin',
                     is_active: true,
                 });
-                console.log('✅ تم تسجيل الدخول وتأكيد صلاحيات الأدمن!');
+                // console.log('✅ تم تسجيل الدخول وتأكيد صلاحيات الأدمن!');
                 return { success: true, user: loginData.user };
             }
         }
-        console.error('❌ خطأ:', error.message);
+        // console.error('❌ خطأ:', error.message);
         return { success: false, error: error.message };
     }
 
@@ -51,7 +51,7 @@ export async function setupAdmin() {
             role: 'admin',
             is_active: true,
         });
-        console.log('✅ تم إنشاء حساب الأدمن بنجاح!');
+        // console.log('✅ تم إنشاء حساب الأدمن بنجاح!');
         return { success: true, user: data.user };
     }
 

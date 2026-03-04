@@ -299,12 +299,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
                 case 'DELETE_ORDER': {
                     const { error } = await supabase.from('orders').delete().eq('id', action.orderId);
-                    if (error) console.error('❌ فشل حذف الطلب من السيرفر:', error.message);
+                    if (error) { /* console.error('❌ فشل حذف الطلب من السيرفر:', error.message); */ }
                     break;
                 }
                 case 'ADD_MESSAGE': {
                     const { error } = await supabase.from('messages').upsert(messageToDb(action.message));
-                    if (error) console.error('❌ فشل حفظ الرسالة في السيرفر:', error.message);
+                    if (error) { /* console.error('❌ فشل حفظ الرسالة في السيرفر:', error.message); */ }
                     break;
                 }
                 case 'MARK_MESSAGE_READ':
@@ -331,12 +331,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
                 case 'UPDATE_DISCOUNT_RULE': {
                     const { error } = await supabase.from('discount_rules').upsert(discountToDb(action.rule));
-                    if (error) console.error('❌ فشل تحديث قاعدة الخصم في السيرفر:', error.message);
+                    if (error) { /* console.error('❌ فشل تحديث قاعدة الخصم في السيرفر:', error.message); */ }
                     break;
                 }
                 case 'REMOVE_DISCOUNT_RULE': {
                     const { error } = await supabase.from('discount_rules').delete().eq('id', action.ruleId);
-                    if (error) console.error('❌ فشل حذف قاعدة الخصم من السيرفر:', error.message);
+                    if (error) { /* console.error('❌ فشل حذف قاعدة الخصم من السيرفر:', error.message); */ }
                     break;
                 }
                 case 'TOGGLE_DISCOUNT_RULE': {

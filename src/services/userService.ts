@@ -17,7 +17,7 @@ export async function getUsers(filters: { role?: string, searchQuery?: string, l
         const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
-            console.error('❌ Error fetching from users table:', error.message);
+            // console.error('❌ Error fetching from users table:', error.message);
             return [];
         }
 
@@ -35,7 +35,7 @@ export async function getUsers(filters: { role?: string, searchQuery?: string, l
 
         return allUsers.slice(offset, offset + limit);
     } catch (e) {
-        console.error('❌ Unexpected error in getUsers:', e);
+        // console.error('❌ Unexpected error in getUsers:', e);
         return [];
     }
 }
@@ -94,7 +94,7 @@ export async function getUsersStats() {
             admins: userData.filter(u => u.role === 'admin' || u.role === 'moderator').length
         };
     } catch (e) {
-        console.error('❌ Error in getUsersStats:', e);
+        // console.error('❌ Error in getUsersStats:', e);
         return { total: 0, active: 0, admins: 0 };
     }
 }
