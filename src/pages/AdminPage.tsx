@@ -17,6 +17,7 @@ import { uploadImage } from '../utils/imageUploader';
 import { StoreSettings } from '../context/StoreContextItems';
 import AdminUsers from './admin/AdminUsers';
 import ReportsPanel from '../components/ReportsPanel';
+import ConfirmModal from '../components/ConfirmModal';
 
 declare var L: any;
 
@@ -98,6 +99,24 @@ export default function AdminPage() {
         const saved = localStorage.getItem('admin-last-seen-orders');
         return saved ? parseInt(saved) : 0;
     });
+
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type?: 'danger' | 'warning';
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'danger'
+    });
+
+    const confirmAction = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'warning' = 'danger') => {
+        setConfirmModal({ isOpen: true, title, message, onConfirm, type });
+    };
 
     // Admin Geographic Settings (Map)
     const [adminMapInstance, setAdminMapInstance] = useState<any>(null);
@@ -287,10 +306,10 @@ export default function AdminPage() {
                             <div style={{ display: 'flex', gap: 6 }}>
                                 <button className="nav-icon-btn small" onClick={() => { setEditingRewardId(reward.id); setRewardForm(reward); setShowRewardModal(true); }}><Edit size={14} /></button>
                                 <button className="nav-icon-btn small danger" onClick={() => {
-                                    if (window.confirm('هل أنت متأكد من حذف هذه المكافأة؟')) {
+                                    confirmAction('حذف المكافأة', 'هل أنت متأكد من حذف هذه المكافأة؟', () => {
                                         dispatch({ type: 'DELETE_REWARD', rewardId: reward.id });
                                         showToast('تم حذف المكافأة بنجاح');
-                                    }
+                                    });
                                 }}><Trash2 size={14} /></button>
                             </div>
                         </div>
@@ -506,7 +525,12 @@ export default function AdminPage() {
                                             <td>
                                                 <div style={{ display: 'flex', gap: 6 }}>
                                                     <button className="btn btn-secondary btn-small" onClick={() => openEditProduct(p)}><Edit size={14} /></button>
-                                                    <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف هذا المنتج؟')) { dispatch({ type: 'DELETE_PRODUCT', productId: p.id }); showToast('تم الحذف', 'warning'); } }}><Trash2 size={14} /></button>
+                                                    <button className="btn btn-danger btn-small" onClick={() => {
+                                                        confirmAction('حذف منتج', 'حذف هذا المنتج؟', () => {
+                                                            dispatch({ type: 'DELETE_PRODUCT', productId: p.id });
+                                                            showToast('تم الحذف', 'warning');
+                                                        });
+                                                    }}><Trash2 size={14} /></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -540,7 +564,12 @@ export default function AdminPage() {
                             </div>
                             <div style={{ display: 'flex', gap: 6 }}>
                                 <button className="btn btn-secondary btn-small" onClick={() => openEditCategory(cat)}><Edit size={14} /></button>
-                                <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف هذا الصنف؟')) { dispatch({ type: 'DELETE_CATEGORY', categoryId: cat.id }); showToast('تم الحذف', 'warning'); } }}><Trash2 size={14} /></button>
+                                <button className="btn btn-danger btn-small" onClick={() => {
+                                    confirmAction('حذف صنف', 'حذف هذا الصنف؟', () => {
+                                        dispatch({ type: 'DELETE_CATEGORY', categoryId: cat.id });
+                                        showToast('تم الحذف', 'warning');
+                                    });
+                                }}><Trash2 size={14} /></button>
                             </div>
                         </div>
                     ))}
@@ -622,7 +651,12 @@ export default function AdminPage() {
                                                     <option value="cancelled">ملغي</option>
                                                 </select>
                                                 <button className="btn btn-secondary btn-small" title="طباعة فاتورة" onClick={() => generateInvoicePDF(order, state.settings)}><FileText size={14} /></button>
-                                                <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف هذا الطلب؟')) { dispatch({ type: 'DELETE_ORDER', orderId: order.id }); showToast('تم الحذف', 'warning'); } }}><Trash2 size={14} /></button>
+                                                <button className="btn btn-danger btn-small" onClick={() => {
+                                                    confirmAction('حذف طلب', 'حذف هذا الطلب؟', () => {
+                                                        dispatch({ type: 'DELETE_ORDER', orderId: order.id });
+                                                        showToast('تم الحذف', 'warning');
+                                                    });
+                                                }}><Trash2 size={14} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -716,12 +750,12 @@ export default function AdminPage() {
                                     className="btn btn-danger btn-small"
                                     title="حذف المحادثة بالكامل"
                                     onClick={() => {
-                                        if (confirm('هل أنت متأكد من حذف هذه المحادثة بالكامل؟ لا يمكن التراجع')) {
+                                        confirmAction('حذف المحادثة', 'هل أنت متأكد من حذف هذه المحادثة بالكامل؟ لا يمكن التراجع', () => {
                                             const original = activeChat[0];
                                             dispatch({ type: 'CLEAR_USER_MESSAGES', userId: original.userId, phone: original.senderPhone });
                                             setSelectedChatPhone(null);
                                             showToast('تم حذف المحادثة بنجاح 🗑️', 'warning');
-                                        }
+                                        });
                                     }}
                                 >
                                     <Trash2 size={14} />
@@ -838,7 +872,12 @@ export default function AdminPage() {
                                         <button className="btn btn-secondary btn-small" onClick={() => { dispatch({ type: 'TOGGLE_DISCOUNT_RULE', ruleId: rule.id }); showToast(rule.active ? 'تم التعطيل' : 'تم التفعيل'); }}>
                                             {rule.active ? <EyeOff size={14} /> : <Eye size={14} />} {rule.active ? 'تعطيل' : 'تفعيل'}
                                         </button>
-                                        <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف هذا التخفيض؟')) { dispatch({ type: 'REMOVE_DISCOUNT_RULE', ruleId: rule.id }); showToast('تم الحذف', 'warning'); } }}><Trash2 size={14} /></button>
+                                        <button className="btn btn-danger btn-small" onClick={() => {
+                                            confirmAction('حذف تخفيض', 'حذف هذا التخفيض؟', () => {
+                                                dispatch({ type: 'REMOVE_DISCOUNT_RULE', ruleId: rule.id });
+                                                showToast('تم الحذف', 'warning');
+                                            });
+                                        }}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
                             ))}
@@ -903,7 +942,11 @@ export default function AdminPage() {
                                                 <button className="btn btn-secondary btn-small" style={{ padding: '6px' }} onClick={() => { dispatch({ type: 'TOGGLE_DISCOUNT_RULE', ruleId: rule.id }); }} title={rule.active ? 'إلغاء التنشيط' : 'تنشيط'}>
                                                     {rule.active ? <EyeOff size={14} /> : <Eye size={14} />}
                                                 </button>
-                                                <button className="btn btn-danger btn-small" style={{ padding: '6px' }} onClick={() => { if (confirm('حذف هذا الكوبون؟')) { dispatch({ type: 'REMOVE_DISCOUNT_RULE', ruleId: rule.id }); } }} title="حذف الكوبون">
+                                                <button className="btn btn-danger btn-small" style={{ padding: '6px' }} onClick={() => {
+                                                    confirmAction('حذف كوبون', 'حذف هذا الكوبون؟', () => {
+                                                        dispatch({ type: 'REMOVE_DISCOUNT_RULE', ruleId: rule.id });
+                                                    });
+                                                }} title="حذف الكوبون">
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
@@ -951,7 +994,12 @@ export default function AdminPage() {
                                         setReviewReplyText(review.adminReply || '');
                                         setShowReviewModal(true);
                                     }}>{review.adminReply ? 'تعديل الرد' : '💬 الرد'}</button>
-                                    <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف التقييم؟')) { dispatch({ type: 'DELETE_REVIEW', reviewId: review.id }); showToast('تم الحذف', 'warning'); } }}><Trash2 size={14} /></button>
+                                    <button className="btn btn-danger btn-small" onClick={() => {
+                                        confirmAction('حذف التقييم', 'حذف التقييم؟', () => {
+                                            dispatch({ type: 'DELETE_REVIEW', reviewId: review.id });
+                                            showToast('تم الحذف', 'warning');
+                                        });
+                                    }}><Trash2 size={14} /></button>
                                 </div>
                             </div>
                         );
@@ -998,7 +1046,12 @@ export default function AdminPage() {
                                     setBannerForm({ title: banner.title, subtitle: banner.subtitle, image: banner.image, link: banner.link, active: banner.active });
                                     setShowBannerModal(true);
                                 }}><Edit size={14} /> تعديل</button>
-                                <button className="btn btn-danger btn-small" onClick={() => { if (confirm('حذف هذا البانر؟')) { dispatch({ type: 'DELETE_BANNER', bannerId: banner.id }); showToast('تم حذف البانر', 'warning'); } }}><Trash2 size={14} /></button>
+                                <button className="btn btn-danger btn-small" onClick={() => {
+                                    confirmAction('حذف البانر', 'حذف هذا البانر؟', () => {
+                                        dispatch({ type: 'DELETE_BANNER', bannerId: banner.id });
+                                        showToast('تم حذف البانر', 'warning');
+                                    });
+                                }}><Trash2 size={14} /></button>
                             </div>
                         </div>
                     ))}
@@ -1215,68 +1268,68 @@ export default function AdminPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                     <button className="btn btn-danger" onClick={() => {
-                        if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف كافة المنتجات والأصناف والبنرات؟ سيتم مسحها من السيرفر تماماً!')) {
+                        confirmAction('مسح شامل للأصناف', '⚠️ هل أنت متأكد من رغبتك في حذف كافة المنتجات والأصناف والبنرات؟ سيتم مسحها من السيرفر تماماً!', () => {
                             dispatch({ type: 'CLEAR_PRODUCTS' });
                             dispatch({ type: 'CLEAR_CATEGORIES' });
                             dispatch({ type: 'DELETE_BANNER', bannerId: 'b1' });
                             dispatch({ type: 'DELETE_BANNER', bannerId: 'b2' });
                             showToast('تم حذف كافة المنتجات والأصناف والبنرات بنجاح 🗑️', 'warning');
-                        }
+                        });
                     }} style={{ background: '#7f1d1d' }}>
                         <Trash2 size={16} /> إفراغ المنتجات والأصناف (بياناتي)
                     </button>
 
                     <button className="btn btn-danger" onClick={() => {
-                        if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف كافة الطلبات وتصفيير المبيعات؟')) {
+                        confirmAction('تصفير المبيعات', '⚠️ هل أنت متأكد من رغبتك في حذف كافة الطلبات وتصفيير المبيعات؟', () => {
                             dispatch({ type: 'CLEAR_ORDERS' });
                             showToast('تم حذف كافة الطلبات بنجاح 🗑️', 'warning');
-                        }
+                        });
                     }}>
                         <Trash2 size={16} /> تصفير الطلبات والمبيعات
                     </button>
 
                     <button className="btn btn-danger" onClick={() => {
-                        if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف كافة الرسائل والدردشات؟')) {
+                        confirmAction('مسح الرسائل', '⚠️ هل أنت متأكد من رغبتك في حذف كافة الرسائل والدردشات؟', () => {
                             dispatch({ type: 'CLEAR_MESSAGES' });
                             showToast('تم حذف كافة الرسائل بنجاح 🗑️', 'warning');
-                        }
+                        });
                     }}>
                         <MessageSquare size={16} /> إفراغ كافة الرسائل
                     </button>
 
                     <button className="btn btn-danger" onClick={() => {
-                        if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف كافة التقييمات؟')) {
+                        confirmAction('مسح التقييمات', '⚠️ هل أنت متأكد من رغبتك في حذف كافة التقييمات؟', () => {
                             dispatch({ type: 'CLEAR_REVIEWS' });
                             showToast('تم حذف كافة التقييمات بنجاح 🗑️', 'warning');
-                        }
+                        });
                     }}>
                         <Star size={16} /> حذف كافة التقييمات
                     </button>
 
                     <button className="btn btn-danger" onClick={() => {
-                        if (confirm('⚠️ هل أنت متأكد من حذف كافة العملاء؟')) {
+                        confirmAction('إفراغ العملاء', '⚠️ هل أنت متأكد من حذف كافة العملاء؟', () => {
                             dispatch({ type: 'CLEAR_CUSTOMERS' });
                             showToast('تم حذف قائمة العملاء بنجاح 🗑️', 'warning');
-                        }
+                        });
                     }}>
                         <Users size={16} /> إفراغ قائمة العملاء
                     </button>
 
                     <button className="btn btn-danger" onClick={() => {
-                        if (confirm('⚠️ هل أنت متأكد من حذف كافة المكافآت؟')) {
+                        confirmAction('حذف المكافآت', '⚠️ هل أنت متأكد من حذف كافة المكافآت؟', () => {
                             dispatch({ type: 'CLEAR_REWARDS' });
                             showToast('تم حذف المكافآت بنجاح 🗑️', 'warning');
-                        }
+                        });
                     }}>
                         <Gift size={16} /> حذف كافة المكافآت
                     </button>
 
                     {/* Factory Reset - THE BIG RED BUTTON */}
                     <button className="btn btn-danger" style={{ gridColumn: '1 / -1', marginTop: 8, padding: '16px', fontSize: '1rem', fontWeight: 'bold', background: '#991b1b' }} onClick={() => {
-                        if (confirm('🚨🚨🚨 تحذير شديد الخطورة: هل أنت متأكد من رغبتك في إعادة ضبط المصنع؟ سيتم حذف كل شيء (منتجات، أصناف، عملاء، مبيعات، إعدادات) وسيعود البرنامج للصفر تماماً!')) {
+                        confirmAction('إعادة ضبط المصنع', '🚨🚨🚨 تحذير شديد الخطورة: هل أنت متأكد من رغبتك في إعادة ضبط المصنع؟ سيتم حذف كل شيء سيعود البرنامج للصفر تماماً!', () => {
                             dispatch({ type: 'FACTORY_RESET' });
                             showToast('تمت إعادة ضبط المصنع بنجاح، البرنامج عاد للصفر 🔄', 'error');
-                        }
+                        });
                     }}>
                         <RefreshCw size={20} /> إعادة ضبط المصنع (حذف شامل لكل شيء)
                     </button>
@@ -1820,6 +1873,17 @@ export default function AdminPage() {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                type={confirmModal.type as any}
+                confirmText="نعم، متأكد"
+                cancelText="إلغاء"
+            />
         </div>
     );
 }

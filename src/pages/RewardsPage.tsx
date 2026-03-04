@@ -5,6 +5,7 @@ import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
 import { showToast } from '../components/ToastContainer';
 import { LoyaltyReward } from '../types';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function RewardsPage() {
     const { state, dispatch } = useStore();
@@ -20,20 +21,37 @@ export default function RewardsPage() {
         } catch { return []; }
     });
 
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+    });
+
     const handleDeleteCoupon = (code: string) => {
-        if (!confirm('هل تريد حذف هذا الكوبون من قائمتك؟')) return;
+        setConfirmModal({
+            isOpen: true,
+            title: 'حذف الكوبون',
+            message: 'هل تريد حذف هذا الكوبون من قائمتك؟',
+            onConfirm: () => {
+                // 1. حذفه من القائمة المحلية
+                const newCoupons = redeemedCoupons.filter(c => c.code !== code);
+                setRedeemedCoupons(newCoupons);
+                localStorage.setItem(`redeemed_coupons_${userUniqueId}`, JSON.stringify(newCoupons));
 
-        // 1. حذفه من القائمة المحلية
-        const newCoupons = redeemedCoupons.filter(c => c.code !== code);
-        setRedeemedCoupons(newCoupons);
-        localStorage.setItem(`redeemed_coupons_${userUniqueId}`, JSON.stringify(newCoupons));
-
-        // 2. محاولة حذفه من قاعدة البيانات (في حال لم يتم استخدامه وحذفه مسبقاً)
-        const rule = state.discountRules.find(r => r.name === code);
-        if (rule) {
-            dispatch({ type: 'REMOVE_DISCOUNT_RULE', ruleId: rule.id });
-        }
-        showToast('تم حذف الكوبون بنجاح');
+                // 2. محاولة حذفه من قاعدة البيانات (في حال لم يتم استخدامه وحذفه مسبقاً)
+                const rule = state.discountRules.find(r => r.name === code);
+                if (rule) {
+                    dispatch({ type: 'REMOVE_DISCOUNT_RULE', ruleId: rule.id });
+                }
+                showToast('تم حذف الكوبون بنجاح');
+            }
+        });
     };
 
     // حساب نقاط المستخدم من الطلبات
@@ -354,6 +372,15 @@ export default function RewardsPage() {
                     </div>
                 </div>
             </div>
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                confirmText="نعم، حذف"
+                cancelText="إلغاء"
+            />
         </div>
     );
 }

@@ -2,6 +2,7 @@
 // 📸 رفع الصور إلى Supabase Storage
 // ============================================================
 import { supabase } from '../lib/supabase';
+import { showToast } from '../components/ToastContainer';
 
 const BUCKET = 'store-assets';
 
@@ -79,11 +80,11 @@ export async function uploadImage(
             // console.error('❌ خطأ في رد Supabase Storage:', error);
             const errorMsg = error.message || JSON.stringify(error);
             if (errorMsg.includes('bucket_id')) {
-                alert('فشل الرفع: المجلد (store-assets) غير موجود. يرجى التأكد من إنشائه في Supabase وتعيينه كـ Public.');
+                showToast('فشل الرفع: المجلد (store-assets) غير موجود.', 'error');
             } else if (errorMsg.includes('403') || errorMsg.includes('Permission')) {
-                alert('فشل الرفع: لا توجد صلاحيات (Access Denied). تأكد من إعداد الـ Bucket كـ Public وإضافة سياسات RLS للرفع.');
+                showToast('فشل الرفع: لا توجد صلاحيات (Access Denied).', 'error');
             } else {
-                alert(`فشل الرفع: ${errorMsg}`);
+                showToast(`فشل الرفع: ${errorMsg}`, 'error');
             }
             return null;
         }
@@ -99,7 +100,7 @@ export async function uploadImage(
         return urlData.publicUrl;
     } catch (err: any) {
         // console.error('❌ خطأ غير متوقع في رفع الصورة:', err);
-        alert(`خطأ غير متوقع: ${err.message || 'فشل الاتصال بالخادم. تأكد من جودة الإنترنت.'}`);
+        showToast(`خطأ غير متوقع: ${err.message || 'فشل الاتصال بالخادم'}`, 'error');
         return null;
     }
 }

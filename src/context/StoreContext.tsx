@@ -8,6 +8,7 @@ import { products as defaultProducts, categories as defaultCategories } from '..
 import themeConfig from '../config/theme';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { showToast } from '../components/ToastContainer';
 
 // استيراد الأنواع والثوابت من الملف الجديد
 import {
@@ -323,7 +324,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     const { error } = await supabase.from('discount_rules').upsert(discountToDb(action.rule));
                     if (error) {
                         // console.error('❌ فشل إضافة قاعدة الخصم للسيرفر:', error.message);
-                        alert(`فشل حفظ التخفيض في السيرفر: ${error.message}. سيتم الحفظ محلياً فقط.`);
+                        showToast(`فشل المزامنة مع السيرفر: ${error.message}`, 'error');
                     } else {
                         // console.log('✅ تم حفظ قاعدة الخصم في السيرفر');
                     }

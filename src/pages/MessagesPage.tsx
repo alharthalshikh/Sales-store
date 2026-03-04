@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function MessagesPage() {
     const { state, dispatch } = useStore();
@@ -11,6 +12,7 @@ export default function MessagesPage() {
     const [senderName, setSenderName] = useState('');
     const [senderPhone, setSenderPhone] = useState('');
     const [started, setStarted] = useState(false);
+    const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
 
     // تحميل بيانات المرسل السابقة أو استخدام بيانات المستخدم المسجل
     useEffect(() => {
@@ -96,18 +98,7 @@ export default function MessagesPage() {
                     {started && (
                         <button
                             className="btn btn-secondary btn-small"
-                            onClick={() => {
-                                if (confirm('هل أنت متأكد من بدء محادثة جديدة؟ سيتم مسح الرسائل السابقة')) {
-                                    dispatch({ type: 'CLEAR_USER_MESSAGES', userId: user?.uid, phone: senderPhone });
-                                    if (!user) {
-                                        localStorage.removeItem('chat-sender-name');
-                                        localStorage.removeItem('chat-sender-phone');
-                                        setSenderName('');
-                                        setSenderPhone('');
-                                        setStarted(false);
-                                    }
-                                }
-                            }}
+                            onClick={() => setShowConfirmNewChat(true)}
                         >
                             🗑️ بدء محادثة جديدة
                         </button>
@@ -161,6 +152,26 @@ export default function MessagesPage() {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={showConfirmNewChat}
+                title="بدء محادثة جديدة"
+                message="هل أنت متأكد من بدء محادثة جديدة؟ سيتم مسح الرسائل السابقة من السجل المحلي."
+                onConfirm={() => {
+                    dispatch({ type: 'CLEAR_USER_MESSAGES', userId: user?.uid, phone: senderPhone });
+                    if (!user) {
+                        localStorage.removeItem('chat-sender-name');
+                        localStorage.removeItem('chat-sender-phone');
+                        setSenderName('');
+                        setSenderPhone('');
+                        setStarted(false);
+                    }
+                    setShowConfirmNewChat(false);
+                }}
+                onCancel={() => setShowConfirmNewChat(false)}
+                confirmText="نعم، ابدأ"
+                cancelText="إلغاء"
+            />
         </div>
     );
 }

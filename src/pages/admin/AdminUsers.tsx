@@ -33,6 +33,7 @@ import {
     Activity
 } from 'lucide-react';
 import { showToast } from '@/components/ToastContainer';
+import ConfirmModal from '../../components/ConfirmModal';
 
 export default function AdminUsers() {
     const queryClient = useQueryClient();
@@ -41,6 +42,18 @@ export default function AdminUsers() {
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
+
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+    });
 
     const { data: users = [], isLoading, isError, refetch: refetchUsers } = useQuery({
         queryKey: ['users', roleFilter, searchQuery],
@@ -274,7 +287,14 @@ export default function AdminUsers() {
                                             className="nav-icon-btn danger"
                                             style={{ width: '36px', height: '36px', color: 'var(--error)' }}
                                             title="حذف"
-                                            onClick={() => { if (confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً؟')) deleteMutation.mutate(user.id) }}
+                                            onClick={() => {
+                                                setConfirmModal({
+                                                    isOpen: true,
+                                                    title: 'حذف مستخدم',
+                                                    message: 'هل أنت متأكد من حذف هذا المستخدم نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+                                                    onConfirm: () => deleteMutation.mutate(user.id)
+                                                });
+                                            }}
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -513,6 +533,16 @@ export default function AdminUsers() {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                confirmText="نعم، حذف"
+                cancelText="إلغاء"
+            />
         </div>
     );
 }

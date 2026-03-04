@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
+import ConfirmModal from './ConfirmModal';
 
 export default function PWAInstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -8,6 +9,8 @@ export default function PWAInstallPrompt() {
     const [platform, setPlatform] = useState<'ios' | 'android' | 'other'>('other');
     const { state } = useStore();
     const s = state.settings;
+    const [showInstructions, setShowInstructions] = useState(false);
+    const [instructionText, setInstructionText] = useState('');
 
     useEffect(() => {
         const ua = window.navigator.userAgent.toLowerCase();
@@ -47,7 +50,8 @@ export default function PWAInstallPrompt() {
 
     const handleInstall = async () => {
         if (platform === 'ios') {
-            alert('📱 للتثبيت على آيفون:\n1. اضغط على أيقونة المشاركة (Share) أسفل الشاشة\n2. مرر للأسفل واختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)');
+            setInstructionText('📱 للتثبيت على آيفون:\n1. اضغط على أيقونة المشاركة (Share) أسفل الشاشة\n2. مرر للأسفل واختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)');
+            setShowInstructions(true);
             return;
         }
 
@@ -60,7 +64,8 @@ export default function PWAInstallPrompt() {
             }
         } else {
             // حل بديل لسامسونج والمتصفحات الأخرى
-            alert('⚙️ للتثبيت يدوياً:\n1. اضغط على قائمة الخيارات (⋮) أو (≡) بالمتصفح\n2. ابحث عن "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"');
+            setInstructionText('⚙️ للتثبيت يدوياً:\n1. اضغط على قائمة الخيارات (⋮) أو (≡) بالمتصفح\n2. ابحث عن "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"');
+            setShowInstructions(true);
         }
     };
 
@@ -239,6 +244,17 @@ export default function PWAInstallPrompt() {
                     }
                 }
             `}</style>
+
+            <ConfirmModal
+                isOpen={showInstructions}
+                title="تعليمات التثبيت"
+                message={instructionText}
+                onConfirm={() => setShowInstructions(false)}
+                onCancel={() => setShowInstructions(false)}
+                confirmText="موافق"
+                cancelText="إغلاق"
+                type="warning"
+            />
         </div>
     );
 }
