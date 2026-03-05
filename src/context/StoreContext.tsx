@@ -703,16 +703,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         supabaseInitialized.current = true;
 
         // مسح الكاش القديم لمنع ظهور البيانات التجريبية
-        const CACHE_VERSION = 'v3';
+        const CACHE_VERSION = 'v4';
         const currentVersion = localStorage.getItem('store-cache-version');
         if (currentVersion !== CACHE_VERSION) {
             localStorage.removeItem('store-state-v2');
             localStorage.removeItem('store-cart');
             localStorage.removeItem('store-favorites');
             localStorage.setItem('store-cache-version', CACHE_VERSION);
-            // console.log('🧹 تم مسح الكاش القديم');
         }
 
+        // ✅ الخطوة 1: تحميل الكاش المحلي فوراً (آخر بيانات حقيقية) قبل الاتصال بالسيرفر
+        loadCachedDataFirst();
+
+        // ✅ الخطوة 2: محاولة جلب البيانات الحديثة من السيرفر في الخلفية
         loadFromSupabase();
     }, []);
 
@@ -762,9 +765,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         };
     }, [user, isAdmin]);
 
+    // ✅ تحميل الكاش المحلي فوراً عند فتح التطبيق (قبل السيرفر)
+    function loadCachedDataFirst() {
+        try {
+            const saved = localStorage.getItem('store-state-v2');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // التأكد من أن الكاش يحتوي بيانات حقيقية وليست فارغة
+                const hasCachedData = parsed.settings?.storeName ||
+                    (parsed.products?.length > 0) ||
+                    (parsed.categories?.length > 0);
+
+                if (hasCachedData) {
+                    const cachedState: Partial<StoreState> = {
+                        settings: parsed.settings || undefined,
+                        products: parsed.products || [],
+                        categories: parsed.categories || [],
+                        discountRules: parsed.discountRules || [],
+                        banners: parsed.banners || [],
+                        rewards: parsed.rewards || [],
+                    };
+
+                    // جلب السلة والمفضلة المحلية
+                    try {
+                        const localCart = localStorage.getItem('store-cart');
+                        const localFavs = localStorage.getItem('store-favorites');
+                        if (localCart) cachedState.cart = JSON.parse(localCart);
+                        if (localFavs) cachedState.favorites = JSON.parse(localFavs);
+                    } catch (e) { }
+
+                    baseDispatch({ type: 'LOAD_STATE', state: cachedState });
+                }
+            }
+        } catch (e) { }
+    }
+
     async function loadFromSupabase() {
         try {
-            // console.log('📡 جاري جلب البيانات العامة...');
             const tables = ['categories', 'products', 'reviews', 'discount_rules', 'settings', 'banners', 'rewards'];
 
             const loadedState: Partial<StoreState> = {};
@@ -787,13 +824,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             });
 
             const results = await Promise.all(promises);
+            let serverHasData = false;
 
             results.forEach(({ table, data, error }) => {
-                if (error) {
-                    // console.warn(`⚠️ Warning fetching ${table}:`, error);
-                    return;
-                }
-                if (!data) return;
+                if (error || !data) return;
+                serverHasData = true;
                 switch (table) {
                     case 'categories': loadedState.categories = data.map(dbToCategory); break;
                     case 'products': loadedState.products = data.map(dbToProduct); break;
@@ -812,58 +847,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 }
             });
 
-            // دمج الحالات السابقة مع الجديدة
-            const hasRemoteData = (loadedState.products?.length || 0) > 0 ||
-                (loadedState.categories?.length || 0) > 0 ||
-                (loadedState.discountRules?.length || 0) > 0 ||
-                !!loadedState.settings;
+            // ✅ إذا نجح جلب بيانات من السيرفر، نحدّث الواجهة والكاش
+            if (serverHasData) {
+                // جلب السلة والمفضلة المحلية
+                try {
+                    const localCart = localStorage.getItem('store-cart');
+                    const localFavs = localStorage.getItem('store-favorites');
+                    if (localCart) loadedState.cart = JSON.parse(localCart);
+                    if (localFavs) loadedState.favorites = JSON.parse(localFavs);
+                } catch (e) { }
 
-            // محاولة الدمج مع البيانات المحلية للسلة والمفضلة
-            try {
-                const localCart = localStorage.getItem('store-cart');
-                const localFavs = localStorage.getItem('store-favorites');
-                if (localCart) loadedState.cart = JSON.parse(localCart);
-                if (localFavs) loadedState.favorites = JSON.parse(localFavs);
-            } catch (e) { }
-
-            // دمج مع localStorage في حال وجود بيانات أحدث أو مفقودة في السيرفر
-            try {
-                const saved = localStorage.getItem('store-state-v2');
-                if (saved) {
-                    const localParsed = JSON.parse(saved);
-                    // إذا كان السيرفر لا يحتوي على تخفيضات ولكن محلياً توجد، استخدم المحلية مؤقتاً
-                    if ((!loadedState.discountRules || loadedState.discountRules.length === 0) && localParsed.discountRules?.length > 0) {
-                        loadedState.discountRules = localParsed.discountRules;
-                        // console.log('♻️ Recovered discount rules from LocalStorage');
-                    }
-                    if ((!loadedState.rewards || loadedState.rewards.length === 0) && localParsed.rewards?.length > 0) {
-                        loadedState.rewards = localParsed.rewards;
-                    }
-                }
-            } catch (e) { }
-
-            // الإشارة بأن البيانات تم تحميلها بنجاح لمنع الكتابة فوقها ببيانات فارغة
-            loadedState.isDataInitialized = true;
-
-            baseDispatch({ type: 'LOAD_STATE', state: loadedState });
-            // seedSupabase(); // تم إيقاف التعبئة التلقائية لضمان بقاء المتجر فارغاً بناءً على طلبك
-        } catch (err) {
-            // console.error('❌ Error in loadFromSupabase:', err);
-            baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
-            loadFromLocalStorage();
-        }
-    }
-
-    async function loadFromLocalStorage() {
-        try {
-            const saved = localStorage.getItem('store-state-v2');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                baseDispatch({ type: 'LOAD_STATE', state: { ...parsed, isDataInitialized: true } });
+                loadedState.isDataInitialized = true;
+                baseDispatch({ type: 'LOAD_STATE', state: loadedState });
             } else {
+                // ✅ السيرفر فشل ولكن الكاش المحلي تم تحميله مسبقاً في loadCachedDataFirst
                 baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
             }
-        } catch (e) { }
+        } catch (err) {
+            // ✅ خطأ في الاتصال = نبقى على الكاش المحلي الذي تم تحميله
+            baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
+        }
     }
 
     async function seedSupabase() {

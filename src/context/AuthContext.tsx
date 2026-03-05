@@ -6,6 +6,9 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
+    sendPasswordResetEmail,
+    signInWithPopup,
+    GoogleAuthProvider,
     User as FirebaseUser
 } from 'firebase/auth';
 
@@ -21,6 +24,8 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
     logout: () => Promise<void>;
     signUp: (email: string, password: string, metadata: { name: string, phone?: string }) => Promise<{ success: boolean; error?: string }>;
+    resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
+    signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
     refreshUserData: () => Promise<void>;
 }
 
@@ -402,8 +407,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+        try {
+            await sendPasswordResetEmail(auth, email);
+            return { success: true };
+        } catch (e: any) {
+            return { success: false, error: translateAuthError(e.code) };
+        }
+    };
+
+    const signInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+        try {
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            if (result.user) {
+                await checkAdmin(result.user.uid, result.user.email || '');
+                if (isBanned) {
+                    await signOut(auth);
+                    return { success: false, error: 'عذراً، هذا الحساب محظور. يرجى التواصل مع الإدارة.' };
+                }
+                return { success: true };
+            }
+            return { success: false, error: 'حدث خطأ في تسجيل الدخول' };
+        } catch (e: any) {
+            return { success: false, error: translateAuthError(e.code) };
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ isAdmin, adminName, adminEmail, user, loading, role, isBanned, userData, login, logout, signUp, refreshUserData }}>
+        <AuthContext.Provider value={{
+            isAdmin, adminName, adminEmail, user, loading, role, isBanned, userData,
+            login, logout, signUp, resetPassword, signInWithGoogle, refreshUserData
+        }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,7 +1,26 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function SplashScreen() {
+    // ✅ جلب آخر بيانات محفوظة لعرض الاسم والشعار الحقيقي أثناء التحميل
+    const cached = useMemo(() => {
+        try {
+            const saved = localStorage.getItem('store-state-v2');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.settings) {
+                    return {
+                        name: parsed.settings.storeName || '',
+                        logo: parsed.settings.storeLogo || '',
+                    };
+                }
+            }
+        } catch (e) { }
+        return { name: '', logo: '' };
+    }, []);
+
+    const isLogoUrl = cached.logo && (cached.logo.startsWith('http') || cached.logo.startsWith('data:'));
+
     return (
         <div style={{
             position: 'fixed',
@@ -27,16 +46,23 @@ export default function SplashScreen() {
                 justifyContent: 'center',
                 marginBottom: '24px',
                 boxShadow: '0 12px 24px rgba(0,0,0,0.1)',
-                border: '1px solid var(--border)'
+                border: '1px solid var(--border)',
+                overflow: 'hidden'
             }}>
-                <span style={{ fontSize: '2.5rem' }}>🍯</span>
+                {isLogoUrl ? (
+                    <img src={cached.logo} alt="" style={{ maxWidth: '60px', maxHeight: '60px', objectFit: 'contain' }} />
+                ) : (
+                    <span style={{ fontSize: '2.5rem' }}>{cached.logo || '🛒'}</span>
+                )}
             </div>
-            <h2 style={{
-                fontSize: '1.2rem',
-                fontWeight: 700,
-                color: 'var(--text)',
-                marginBottom: '8px'
-            }}>أرض الجنتين</h2>
+            {cached.name && (
+                <h2 style={{
+                    fontSize: '1.2rem',
+                    fontWeight: 700,
+                    color: 'var(--text)',
+                    marginBottom: '8px'
+                }}>{cached.name}</h2>
+            )}
             <p style={{
                 fontSize: '0.9rem',
                 color: 'var(--text-secondary)',

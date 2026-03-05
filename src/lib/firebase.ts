@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD3mlTsZN7DXO3To8jaDrXLSxP2MXddf5g",
@@ -13,3 +13,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// 🔒 تأمين استمرار الجلسة لضمان عدم تسجيل الخروج التلقائي
+setPersistence(auth, browserLocalPersistence)
+    .catch((error) => {
+        // console.error("Firebase Persistence Error:", error);
+    });

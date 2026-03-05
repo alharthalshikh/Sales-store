@@ -9,7 +9,7 @@ import { useStore } from '../hooks/useStore';
 import LogoRenderer from '../components/LogoRenderer';
 
 export default function LoginPage() {
-  const { login, signUp, user, isAdmin, loading } = useAuth();
+  const { login, signUp, resetPassword, signInWithGoogle, user, isAdmin, loading } = useAuth();
   const { state } = useStore();
   const navigate = useNavigate();
   const s = state.settings;
@@ -30,6 +30,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -59,6 +61,7 @@ export default function LoginPage() {
         navigate('/', { replace: true });
       } else {
         setError(result.error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        setFailedAttempts(prev => prev + 1);
       }
     } else {
       if (formData.password !== formData.confirmPassword) {
@@ -82,6 +85,35 @@ export default function LoginPage() {
       }
     }
 
+    setSubmitting(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email) {
+      setError('يرجى إدخال البريد الإلكتروني أولاً لإرسال رابط استعادة كلمة المرور');
+      return;
+    }
+
+    setResetLoading(true);
+    setError('');
+    const result = await resetPassword(formData.email);
+    if (result.success) {
+      setSuccessMsg('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني بنجاح! 📧 تفقد صندوق الوارد.');
+    } else {
+      setError(result.error || 'حدث خطأ أثناء محاولة إرسال الرابط');
+    }
+    setResetLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setSubmitting(true);
+    const result = await signInWithGoogle();
+    if (result.success) {
+      navigate('/', { replace: true });
+    } else {
+      setError(result.error || 'فشل تسجيل الدخول عبر جوجل');
+    }
     setSubmitting(false);
   };
 
@@ -184,6 +216,18 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {(mode === 'login' && failedAttempts >= 2) && (
+                <div style={{ textAlign: 'left', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="forgot-pass-link"
+                    disabled={resetLoading}
+                  >
+                    {resetLoading ? 'جاري الإرسال...' : 'نسيت كلمة المرور؟'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {mode === 'signup' && (
@@ -213,6 +257,30 @@ export default function LoginPage() {
                 </span>
               )}
             </button>
+
+            {mode === 'login' && (
+              <>
+                <div className="auth-divider">
+                  <span>أو</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="google-auth-btn"
+                  disabled={submitting}
+                >
+                  <svg viewBox="0 0 48 48" width="24" height="24">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                    <path fill="none" d="M0 0h48v48H0z" />
+                  </svg>
+                  <span>تسجيل الدخول عبر جوجل</span>
+                </button>
+              </>
+            )}
 
             <div className="auth-mode-switch">
               <p>
@@ -507,6 +575,73 @@ export default function LoginPage() {
           color: var(--accent);
           background: rgba(200, 134, 10, 0.1);
           transform: translateX(-5px);
+        }
+
+        .forgot-pass-link {
+          background: none;
+          border: none;
+          color: var(--primary-light);
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s;
+          padding: 4px 0;
+        }
+
+        .forgot-pass-link:hover:not(:disabled) {
+          color: var(--accent);
+          text-decoration: underline;
+        }
+        
+        .forgot-pass-link:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .auth-divider {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          margin: 25px 0;
+          color: var(--text-light);
+          font-size: 0.9rem;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: var(--border);
+        }
+
+        .google-auth-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          background: var(--surface);
+          color: var(--text);
+          border: 1.5px solid var(--border);
+          border-radius: 14px;
+          padding: 14px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .google-auth-btn:hover:not(:disabled) {
+          background: var(--bg-alt);
+          border-color: var(--accent);
+          transform: translateY(-1px);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .google-auth-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         @media (max-width: 480px) {
