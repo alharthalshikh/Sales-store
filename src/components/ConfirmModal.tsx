@@ -30,6 +30,7 @@ export default function ConfirmModal({
                 className={`modal confirm-modal ${type}`}
                 onClick={e => e.stopPropagation()}
                 style={{
+                    width: '95%',
                     maxWidth: '400px',
                     padding: '24px',
                     textAlign: 'center',
@@ -57,7 +58,14 @@ export default function ConfirmModal({
                 </div>
 
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '12px' }}>{title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '24px' }}>
+                <p style={{
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.95rem',
+                    lineHeight: 1.6,
+                    marginBottom: '24px',
+                    whiteSpace: 'pre-line',
+                    textAlign: 'right'
+                }}>
                     {message}
                 </p>
 

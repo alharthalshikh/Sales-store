@@ -18,11 +18,13 @@ export default function PWAInstallPrompt() {
         setPlatform(isIOS ? 'ios' : (/android/.test(ua) ? 'android' : 'other'));
 
         // 🛡️ التحقق من التثبيت المسبق
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-            || (window.navigator as any).standalone
-            || localStorage.getItem('pwa_installed') === 'true';
+        const isCurrentlyStandalone = window.matchMedia('(display-mode: standalone)').matches
+            || (window.navigator as any).standalone;
 
-        if (isStandalone) return;
+        if (isCurrentlyStandalone) {
+            localStorage.setItem('pwa_installed', 'true');
+            return;
+        }
 
         // التحقق من وجود المطالبة المخزنة عالمياً
         if ((window as any).deferredPrompt) {
@@ -77,12 +79,21 @@ export default function PWAInstallPrompt() {
             }
         }
 
-        // إذا لم يكن هناك مطالبة مباشرة (مثل آيفون أو متصفحات معينة)، نظهر التعليمات
+        // إذا لم يكن هناك مطالبة مباشرة (مثل آيفون أو متصفحات معينة)
         if (platform === 'ios') {
             setInstructionText('📱 للتثبيت على آيفون:\n1. اضغط على أيقونة المشاركة (Share) أسفل الشاشة\n2. مرر للأسفل واختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)');
             setShowInstructions(true);
+        } else if (platform === 'android') {
+            // لمحاولة التقاط المطالبة إذا كانت ستظهر قريباً
+            if (!deferredPrompt && (window as any).deferredPrompt) {
+                setDeferredPrompt((window as any).deferredPrompt);
+                setTimeout(handleInstall, 100);
+                return;
+            }
+
+            setInstructionText('📱 لتثبيت التطبيق على أندرويد:\n\n1. ابحث عن أيقونة "تثبيت" (Install) بجانب شريط العنوان أو في قائمة المتصفح (⋮).\n2. إذا لم تظهر، اختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen).\n\n* ملاحظة: يفضل استخدام Chrome أو Samsung Internet.');
+            setShowInstructions(true);
         } else {
-            // حل بديل لسامسونج والمتصفحات الأخرى التي لا تدعم التثبيت البرمجي المباشر
             setInstructionText('⚙️ للتثبيت يدوياً:\n1. اضغط على قائمة الخيارات (⋮) أو (≡) بالمتصفح\n2. ابحث عن "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"');
             setShowInstructions(true);
         }
