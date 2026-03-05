@@ -342,6 +342,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             case 'auth/weak-password': return 'كلمة المرور ضعيفة جداً';
             case 'auth/invalid-credential': return 'بيانات الدخول غير صحيحة';
             case 'auth/too-many-requests': return 'محاولات كثيرة جداً. يرجى الانتظار قليلاً';
+            case 'auth/operation-not-allowed': return 'طريقة تسجيل الدخول هذه غير مفعّلة. يرجى تفعيلها من لوحة تحكم Firebase';
+            case 'auth/popup-closed-by-user': return 'تم إغلاق نافذة تسجيل الدخول. حاول مرة أخرى';
+            case 'auth/popup-blocked': return 'تم حظر النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة لهذا الموقع';
+            case 'auth/cancelled-popup-request': return 'تم إلغاء عملية تسجيل الدخول';
+            case 'auth/unauthorized-domain': return 'هذا الرابط غير مصرح به في Firebase. أضف الدومين في إعدادات المصادقة';
+            case 'auth/account-exists-with-different-credential': return 'يوجد حساب بهذا البريد مسجل بطريقة أخرى. جرب تسجيل الدخول بالإيميل وكلمة المرور';
             default: return 'حدث خطأ في عملية المصادقة';
         }
     };
