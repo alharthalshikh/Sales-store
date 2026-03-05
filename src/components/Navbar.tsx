@@ -13,12 +13,25 @@ export default function Navbar() {
     const location = useLocation();
     const [scrolled, setScrolled] = useState(false);
     const [showThemeMenu, setShowThemeMenu] = useState(false);
+    const themeMenuRef = React.useRef<HTMLDivElement>(null);
 
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+
+        // إغلاق القائمة عند النقر في أي مكان آخر
+        const handleClickOutside = (event: MouseEvent) => {
+            if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
+                setShowThemeMenu(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     // منع سكرول الصفحة خلف القائمة الجانبية
@@ -65,7 +78,7 @@ export default function Navbar() {
 
                     <div className="navbar-actions">
                         {/* Theme Switcher */}
-                        <div style={{ position: 'relative' }} className="hide-mobile">
+                        <div style={{ position: 'relative' }} className="hide-mobile" ref={themeMenuRef}>
                             <button
                                 className="nav-icon-btn"
                                 onClick={() => setShowThemeMenu(!showThemeMenu)}
