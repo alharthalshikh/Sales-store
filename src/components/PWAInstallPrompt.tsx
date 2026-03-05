@@ -24,18 +24,30 @@ export default function PWAInstallPrompt() {
 
         if (isStandalone) return;
 
+        // التحقق من وجود المطالبة المخزنة عالمياً
+        if ((window as any).deferredPrompt) {
+            setDeferredPrompt((window as any).deferredPrompt);
+        }
+
         const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
+            (window as any).deferredPrompt = e;
+        };
+
+        const handlePromptReady = () => {
+            if ((window as any).deferredPrompt) {
+                setDeferredPrompt((window as any).deferredPrompt);
+            }
         };
 
         const handleAppInstalled = () => {
             localStorage.setItem('pwa_installed', 'true');
             setIsVisible(false);
-            // console.log('✅ تم تثبيت التطبيق بنجاح');
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('pwa-prompt-ready', handlePromptReady);
         window.addEventListener('appinstalled', handleAppInstalled);
 
         // 🚀 إظهار الإعلان بعد 5 ثوانٍ من الدخول
@@ -43,27 +55,34 @@ export default function PWAInstallPrompt() {
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('pwa-prompt-ready', handlePromptReady);
             window.removeEventListener('appinstalled', handleAppInstalled);
             clearTimeout(timer);
         };
     }, []);
 
     const handleInstall = async () => {
+        // إذا كان هناك مطالبة تثبيت جاهزة، نستخدمها مباشرة
+        if (deferredPrompt) {
+            try {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    localStorage.setItem('pwa_installed', 'true');
+                    setIsVisible(false);
+                }
+                return;
+            } catch (error) {
+                console.error('Error during PWA installation:', error);
+            }
+        }
+
+        // إذا لم يكن هناك مطالبة مباشرة (مثل آيفون أو متصفحات معينة)، نظهر التعليمات
         if (platform === 'ios') {
             setInstructionText('📱 للتثبيت على آيفون:\n1. اضغط على أيقونة المشاركة (Share) أسفل الشاشة\n2. مرر للأسفل واختر "إضافة إلى الشاشة الرئيسية" (Add to Home Screen)');
             setShowInstructions(true);
-            return;
-        }
-
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                localStorage.setItem('pwa_installed', 'true');
-                setIsVisible(false);
-            }
         } else {
-            // حل بديل لسامسونج والمتصفحات الأخرى
+            // حل بديل لسامسونج والمتصفحات الأخرى التي لا تدعم التثبيت البرمجي المباشر
             setInstructionText('⚙️ للتثبيت يدوياً:\n1. اضغط على قائمة الخيارات (⋮) أو (≡) بالمتصفح\n2. ابحث عن "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"');
             setShowInstructions(true);
         }
