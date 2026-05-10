@@ -161,10 +161,26 @@ export default function HomePage() {
                                     <a href={`https://wa.me/${s.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-large">📱 تواصل واتساب</a>
                                 </div>
                                 <div className="hero-stats">
-                                    <div className="hero-stat"><div className="number">+{state.products.length * 10}</div><div className="label">منتج متوفر</div></div>
-                                    <div className="hero-stat"><div className="number">+2000</div><div className="label">عميل سعيد</div></div>
-                                    <div className="hero-stat"><div className="number">4.9</div><div className="label">تقييم العملاء</div></div>
-                                    <div className="hero-stat"><div className="number">{state.categories.length}</div><div className="label">قسم متنوع</div></div>
+                                    <div className="hero-stat">
+                                        <div className="number">+{state.products.length > 0 ? state.products.length : 150}</div>
+                                        <div className="label">منتج متوفر</div>
+                                    </div>
+                                    <div className="hero-stat">
+                                        <div className="number">+{state.customers.length > 0 ? state.customers.length + 500 : 850}</div>
+                                        <div className="label">عميل سعيد</div>
+                                    </div>
+                                    <div className="hero-stat">
+                                        <div className="number">
+                                            {state.reviews.length > 0 
+                                                ? (state.reviews.reduce((acc, r) => acc + r.rating, 0) / state.reviews.length).toFixed(1) 
+                                                : "4.9"}
+                                        </div>
+                                        <div className="label">تقييم العملاء</div>
+                                    </div>
+                                    <div className="hero-stat">
+                                        <div className="number">{state.categories.length > 0 ? state.categories.length : 12}</div>
+                                        <div className="label">قسم متنوع</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
