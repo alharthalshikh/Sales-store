@@ -33,8 +33,16 @@ function applyTheme() {
     root.style.setProperty('--secondary-light', theme.colors.secondaryLight);
     root.style.setProperty('--accent', theme.colors.accent);
     root.style.setProperty('--accent-glow', theme.colors.accentGlow);
-    root.style.setProperty('--border-brand', theme.colors.border);
-    root.style.setProperty('--gradient-brand', theme.colors.gradient);
+    root.style.setProperty('--bg', theme.colors.background);
+    root.style.setProperty('--bg-alt', theme.colors.backgroundAlt);
+    root.style.setProperty('--surface', theme.colors.surface);
+    root.style.setProperty('--surface-hover', theme.colors.surfaceHover);
+    root.style.setProperty('--text', theme.colors.text);
+    root.style.setProperty('--text-secondary', theme.colors.textSecondary);
+    root.style.setProperty('--text-light', theme.colors.textLight);
+    root.style.setProperty('--border', theme.colors.border);
+    root.style.setProperty('--gradient', theme.colors.gradient);
+    root.style.setProperty('--gradient-alt', theme.colors.gradientAlt);
 }
 
 applyTheme();

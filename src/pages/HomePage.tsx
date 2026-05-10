@@ -148,7 +148,7 @@ export default function HomePage() {
                     /* Fallback if no banners */
                     <>
                         <div className="hero-bg is-logo">
-                            <img src="/hero-logo.svg" alt={s.storeName} />
+                            <img src="/hs-logo.png" alt={s.storeName} />
                         </div>
                         <div className="hero-decoration" />
                         <div className="container">

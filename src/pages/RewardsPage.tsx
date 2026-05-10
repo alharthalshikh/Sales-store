@@ -167,10 +167,10 @@ export default function RewardsPage() {
     }
 
     // Tier calculation
-    const tier = totalPoints >= 1000 ? { name: 'ماسي', icon: '💎', color: '#2196F3' }
-        : totalPoints >= 500 ? { name: 'ذهبي', icon: '🥇', color: '#FF9800' }
-            : totalPoints >= 200 ? { name: 'فضي', icon: '🥈', color: '#9E9E9E' }
-                : { name: 'برونزي', icon: '🥉', color: '#CD7F32' };
+    const tier = totalPoints >= 1000 ? { name: 'ماسي', icon: '💎', color: '#D4AF37' }
+        : totalPoints >= 500 ? { name: 'ذهبي', icon: '🥇', color: '#FFD700' }
+            : totalPoints >= 200 ? { name: 'فضي', icon: '🥈', color: '#C0C0C0' }
+                : { name: 'برونزي', icon: '🥉', color: '#8B4513' };
 
     return (
         <div className="page">

@@ -31,10 +31,10 @@ export interface StoreSettings {
 }
 
 export const defaultSettings: StoreSettings = {
-    storeName: 'أرض الجنتين',
-    storeDescription: 'أجود أنواع العسل الطبيعي، التمور الفاخرة، والعطور العربية الأصيلة - بإشراف الحارث (Alharth)',
-    storeTagline: 'أرض الجنتين... جودة ونقاء بإشراف الحارث (Alharth)',
-    storeLogo: 'https://gxxnuxowzufouzfzoxun.supabase.co/storage/v1/object/public/store-assets/settings/1771717035634-181c99.webp',
+    storeName: 'هوم ستور',
+    storeDescription: 'كل ما تحتاجه تحت سقف واحد - أحدث الأجهزة المنزلية والأدوات الكهربائية بجودة عالية وضمان معتمد',
+    storeTagline: 'كل ما تحتاجه تحت سقف واحد',
+    storeLogo: '/hs-logo.png',
     storeType: themeConfig.storeType,
     whatsappNumber: themeConfig.whatsappNumber,
     currency: themeConfig.currency,

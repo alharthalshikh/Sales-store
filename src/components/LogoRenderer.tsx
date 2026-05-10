@@ -33,8 +33,8 @@ const LogoRenderer: React.FC<LogoRendererProps> = ({ logo, size = 32, className 
         );
     }
 
-    // 2. إذا كان رابط صورة (HTTP/HTTPS)
-    if (cleanLogo.startsWith('http')) {
+    // 2. إذا كان رابط صورة (HTTP/HTTPS أو مسار محلي)
+    if (cleanLogo.startsWith('http') || cleanLogo.startsWith('/')) {
         return (
             <img
                 src={cleanLogo}

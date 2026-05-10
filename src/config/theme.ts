@@ -172,40 +172,40 @@ const clinicTheme: ThemeConfig = {
 // ============================================================
 const homewareTheme: ThemeConfig = {
     storeType: 'homeware',
-    storeName: 'بيت الأدوات',
-    storeNameEn: 'Home Tools',
-    storeDescription: 'كل ما تحتاجه لمنزلك من أدوات ومستلزمات',
-    storeTagline: 'بيتك أجمل معنا',
-    storeLogo: '🏠',
+    storeName: 'هوم ستور',
+    storeNameEn: 'HOME STORE',
+    storeDescription: 'كل ما تحتاجه تحت سقف واحد - أحدث الأجهزة المنزلية والأدوات الكهربائية بجودة عالية وضمان معتمد',
+    storeTagline: 'كل ما تحتاجه تحت سقف واحد',
+    storeLogo: '/hs-logo.png',
     whatsappNumber: '966500000000',
     currency: 'ريال',
     currencySymbol: 'ر.س',
     colors: {
-        primary: '#FF6F00',
-        primaryLight: '#FF9100',
-        primaryDark: '#E65100',
-        secondary: '#4E342E',
-        secondaryLight: '#6D4C41',
-        accent: '#FFB74D',
-        accentGlow: 'rgba(255, 183, 77, 0.3)',
-        background: '#0A0806',
-        backgroundAlt: '#14100E',
-        surface: '#1A1614',
-        surfaceHover: '#24201E',
-        text: '#F5EDE5',
-        textSecondary: '#C4B4A4',
-        textLight: '#8B7B6B',
-        border: 'rgba(255, 111, 0, 0.2)',
+        primary: '#C5A059', // ذهبي هادئ من الكرت
+        primaryLight: '#DDC594',
+        primaryDark: '#8E6F3E',
+        secondary: '#111111',
+        secondaryLight: '#222222',
+        accent: '#C5A059',
+        accentGlow: 'rgba(197, 160, 89, 0.3)',
+        background: '#0A0A0A', // أسود كرت المحل
+        backgroundAlt: '#141414',
+        surface: '#1A1A1A',
+        surfaceHover: '#242424',
+        text: '#FFFFFF',
+        textSecondary: '#A0A0A0',
+        textLight: '#666666',
+        border: 'rgba(197, 160, 89, 0.2)',
         success: '#4CAF50',
         warning: '#FF9800',
         error: '#F44336',
-        gradient: 'linear-gradient(135deg, #FF6F00 0%, #FFB74D 50%, #FF9100 100%)',
-        gradientAlt: 'linear-gradient(135deg, #14100E 0%, #24201E 100%)',
-        heroOverlay: 'linear-gradient(135deg, rgba(10,8,6,0.85) 0%, rgba(20,16,14,0.7) 50%, rgba(255,111,0,0.15) 100%)',
+        gradient: 'linear-gradient(135deg, #C5A059 0%, #E8D5B5 50%, #8E6F3E 100%)',
+        gradientAlt: 'linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%)',
+        heroOverlay: 'linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.7) 50%, rgba(197,160,89,0.1) 100%)',
     },
-    heroImage: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1920&q=80',
+    heroImage: 'https://images.unsplash.com/photo-1556911223-053f776bc312?w=1920&q=80',
     aboutImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80',
-    features: ['جودة عالية', 'أسعار مخفضة', 'توصيل سريع', 'ضمان المنتجات'],
+    features: ['ضمان معتمد', 'توصيل سريع', 'جودة أصلية', 'أفضل الأسعار'],
 };
 
 // ============================================================
@@ -221,7 +221,7 @@ const themes: Record<StoreType, ThemeConfig> = {
 };
 
 // 👇 غيّر هذا السطر لتغيير الثيم بالكامل
-export const ACTIVE_THEME: StoreType = 'honey';
+export const ACTIVE_THEME: StoreType = 'homeware';
 
 export const theme: ThemeConfig = themes[ACTIVE_THEME];
 

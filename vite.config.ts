@@ -10,11 +10,11 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
             manifest: {
-                name: 'أرض الجنتين - المتجر السحابي',
-                short_name: 'أرض الجنتين',
-                description: 'متجر أرض الجنتين للأدوات والتجهيزات',
-                theme_color: '#C8860A',
-                background_color: '#0D0A06',
+                name: 'هوم ستور - HOME STORE',
+                short_name: 'هوم ستور',
+                description: 'هوم ستور - كل ما تحتاجه تحت سقف واحد',
+                theme_color: '#C5A059',
+                background_color: '#0A0A0A',
                 display: 'standalone',
                 scope: '/',
                 start_url: '/',
@@ -29,21 +29,21 @@ export default defineConfig({
                 ],
                 icons: [
                     {
-                        src: 'icon.svg',
+                        src: 'hs-logo.png',
                         sizes: 'any',
-                        type: 'image/svg+xml',
+                        type: 'image/png',
                         purpose: 'any'
                     },
                     {
-                        src: 'icon.svg',
+                        src: 'hs-logo.png',
                         sizes: '192x192',
-                        type: 'image/svg+xml',
+                        type: 'image/png',
                         purpose: 'maskable'
                     },
                     {
-                        src: 'icon.svg',
+                        src: 'hs-logo.png',
                         sizes: '512x512',
-                        type: 'image/svg+xml'
+                        type: 'image/png'
                     }
                 ]
             },

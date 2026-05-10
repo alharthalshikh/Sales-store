@@ -52,7 +52,7 @@ export default function Navbar() {
         if (logo.startsWith('<svg')) {
             return <div className={className} style={{ width: 45, height: 45, display: 'flex', alignItems: 'center', justifyContent: 'center', ...styles }} dangerouslySetInnerHTML={{ __html: logo }} />;
         }
-        if (logo.startsWith('http')) {
+        if (logo.startsWith('http') || logo.startsWith('/')) {
             return <img src={logo} alt="Logo" className={className} style={{ width: 45, height: 45, borderRadius: 8, objectFit: 'contain', ...styles }} />;
         }
         return <span className={className} style={{ fontSize: '1.5rem', ...styles }}>{logo}</span>;

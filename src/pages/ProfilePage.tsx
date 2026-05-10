@@ -6,10 +6,10 @@ import { formatOrderId } from '../utils/formatOrderId';
 
 // حساب مستوى الولاء بناءً على النقاط
 function getLoyaltyTier(points: number) {
-    if (points >= 1000) return { name: 'ماسي', icon: '💎', color: '#B9F2FF', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', next: null, progress: 100 };
-    if (points >= 500) return { name: 'ذهبي', icon: '🥇', color: '#FFD700', gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)', next: 1000, progress: (points / 1000) * 100 };
-    if (points >= 200) return { name: 'فضي', icon: '🥈', color: '#C0C0C0', gradient: 'linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%)', next: 500, progress: (points / 500) * 100 };
-    return { name: 'برونزي', icon: '🥉', color: '#CD7F32', gradient: 'linear-gradient(135deg, #C8860A 0%, #FFD700 100%)', next: 200, progress: (points / 200) * 100 };
+    if (points >= 1000) return { name: 'ماسي', icon: '💎', color: '#B9F2FF', gradient: 'linear-gradient(135deg, #000000 0%, #D4AF37 50%, #000000 100%)', next: null, progress: 100 };
+    if (points >= 500) return { name: 'ذهبي', icon: '🥇', color: '#FFD700', gradient: 'linear-gradient(135deg, #1A1A1A 0%, #D4AF37 100%)', next: 1000, progress: (points / 1000) * 100 };
+    if (points >= 200) return { name: 'فضي', icon: '🥈', color: '#C0C0C0', gradient: 'linear-gradient(135deg, #2c3e50 0%, #bdc3c7 100%)', next: 500, progress: (points / 500) * 100 };
+    return { name: 'برونزي', icon: '🥉', color: '#CD7F32', gradient: 'linear-gradient(135deg, #000000 0%, #1A1A1A 100%)', next: 200, progress: (points / 200) * 100 };
 }
 
 export default function ProfilePage() {
@@ -65,77 +65,74 @@ export default function ProfilePage() {
 
                 {/* ===== بطاقة العضوية الرقمية ===== */}
                 <div className="profile-loyalty-card" style={{
-                    background: tier.gradient,
+                    background: '#0A0A0A',
                     borderRadius: '24px',
-                    padding: '32px',
+                    padding: '40px 32px',
                     color: '#fff',
                     position: 'relative',
                     overflow: 'hidden',
                     marginBottom: '32px',
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+                    border: '1px solid rgba(197, 160, 89, 0.3)',
                 }}>
-                    {/* تأثير زجاجي في الخلفية */}
+                    {/* Decorative Gold Curves from the business card */}
                     <div style={{
-                        position: 'absolute', top: '-50%', right: '-20%',
-                        width: '300px', height: '300px',
-                        background: 'rgba(255,255,255,0.1)',
+                        position: 'absolute', top: '-40px', right: '-40px',
+                        width: '180px', height: '180px',
+                        background: 'linear-gradient(135deg, transparent 40%, #C5A059 45%, #E8D5B5 50%, #C5A059 55%, transparent 60%)',
                         borderRadius: '50%',
-                        filter: 'blur(40px)',
+                        opacity: 0.8,
                     }} />
                     <div style={{
-                        position: 'absolute', bottom: '-30%', left: '-10%',
-                        width: '200px', height: '200px',
-                        background: 'rgba(255,255,255,0.08)',
+                        position: 'absolute', bottom: '-60px', left: '-60px',
+                        width: '220px', height: '220px',
+                        background: 'linear-gradient(135deg, transparent 40%, #C5A059 45%, #E8D5B5 50%, #C5A059 55%, transparent 60%)',
                         borderRadius: '50%',
-                        filter: 'blur(30px)',
+                        opacity: 0.6,
+                        transform: 'rotate(180deg)'
                     }} />
 
-                    <div style={{ position: 'relative', zIndex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-                            <div>
-                                <div style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: '4px' }}>بطاقة عضوية</div>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 800 }}>{s.storeName}</div>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '2.5rem' }}>{tier.icon}</div>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 700, marginTop: '4px' }}>عضو {tier.name}</div>
-                            </div>
+                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ 
+                                fontSize: '4.5rem', 
+                                fontWeight: 900, 
+                                lineHeight: 1,
+                                background: 'linear-gradient(to bottom, #E8D5B5, #C5A059, #8E6F3E)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))',
+                                marginBottom: '10px'
+                            }}>HS</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '4px', color: '#E8D5B5' }}>HOME STORE</div>
+                            <div style={{ fontSize: '0.85rem', color: '#C5A059', marginTop: '4px', opacity: 0.9 }}>كل ما تحتاجه تحت سقف واحد</div>
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                            <div>
-                                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>صاحب البطاقة</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-                                    {userData?.name || adminName || user?.displayName || user?.email?.split('@')[0] || 'عميل'}
-                                </div>
-                                <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>
-                                    {adminEmail || user?.email}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '30px', borderTop: '1px solid rgba(197, 160, 89, 0.2)', paddingTop: '20px' }}>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.6, textTransform: 'uppercase' }}>Card Holder</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                                    {userData?.name || adminName || user?.displayName || 'VIP CUSTOMER'}
                                 </div>
                             </div>
                             <div style={{ textAlign: 'left' }}>
-                                <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>نقاط الولاء</div>
-                                <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalPoints}</div>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>LOYALTY POINTS</div>
+                                <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#C5A059' }}>{totalPoints}</div>
                             </div>
                         </div>
 
-                        {/* شريط التقدم للمستوى التالي */}
-                        {tier.next && (
-                            <div style={{ marginTop: '20px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', opacity: 0.8, marginBottom: '6px' }}>
-                                    <span>التقدم نحو المستوى التالي</span>
-                                    <span>{totalPoints} / {tier.next}</span>
-                                </div>
-                                <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
-                                    <div style={{
-                                        width: `${tier.progress}%`,
-                                        height: '100%',
-                                        background: 'rgba(255,255,255,0.8)',
-                                        borderRadius: '10px',
-                                        transition: 'width 1s ease',
-                                    }} />
-                                </div>
+                        <div style={{ position: 'absolute', top: '-10px', left: '0' }}>
+                            <div style={{ 
+                                padding: '4px 12px', 
+                                borderRadius: '12px', 
+                                background: 'linear-gradient(90deg, #C5A059, #8E6F3E)',
+                                fontSize: '0.7rem', 
+                                fontWeight: 800,
+                                color: '#000'
+                            }}>
+                                {tier.name} MEMBER
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
 

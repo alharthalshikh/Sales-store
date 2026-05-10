@@ -13,26 +13,26 @@
 }
 
 :root {
-  --primary: #C8860A;
-  --primary-light: #E5A820;
-  --primary-dark: #8B5E0B;
-  --secondary: #5C3D0E;
-  --secondary-light: #7A5523;
-  --accent: #FFD700;
-  --accent-glow: rgba(255, 215, 0, 0.3);
-  --bg: #0d0a06;
-  --bg-alt: #1a1408;
-  --surface: #1e1710;
-  --surface-hover: #2a2018;
-  --text: #f5e6c8;
-  --text-secondary: #c4a87a;
-  --text-light: #8b7355;
-  --border: rgba(200, 134, 10, 0.2);
+  --primary: #C5A059;
+  --primary-light: #DDC594;
+  --primary-dark: #8E6F3E;
+  --secondary: #111111;
+  --secondary-light: #222222;
+  --accent: #C5A059;
+  --accent-glow: rgba(197, 160, 89, 0.3);
+  --bg: #0A0A0A;
+  --bg-alt: #141414;
+  --surface: #1A1A1A;
+  --surface-hover: #242424;
+  --text: #FFFFFF;
+  --text-secondary: #A0A0A0;
+  --text-light: #666666;
+  --border: rgba(197, 160, 89, 0.2);
   --success: #4CAF50;
   --warning: #FF9800;
   --error: #F44336;
-  --gradient: linear-gradient(135deg, #C8860A 0%, #FFD700 50%, #E5A820 100%);
-  --gradient-alt: linear-gradient(135deg, #1A1408 0%, #2A2018 100%);
+  --gradient: linear-gradient(135deg, #C5A059 0%, #E8D5B5 50%, #8E6F3E 100%);
+  --gradient-alt: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -45,37 +45,34 @@
   --font: 'Tajawal', sans-serif;
 }
 
-/* ===== 🎨 Light Theme (Ultra-Premium Champagne & Gold) ===== */
+/* ===== 🎨 Light Theme (Premium Gold & White) ===== */
 [data-theme="light"],
 html[data-theme="light"],
 body.light-mode {
-  --bg: #faf7f2 !important;
-  /* شامبين نقي وفخم */
-  --bg-alt: #ffffff !important;
-  --surface: #ffffff !important;
-  --surface-hover: #fdf5e6 !important;
-  --text: #2a1b0a !important;
-  /* بني عميق جداً يوفر تباين عالي */
-  --text-secondary: #5d432c !important;
-  --text-light: #8d735a !important;
-  --accent: #c8860a !important;
-  --accent-glow: rgba(200, 134, 10, 0.1) !important;
-  --border: rgba(200, 134, 10, 0.1) !important;
+  --bg: #FAFAFA !important;
+  --bg-alt: #FFFFFF !important;
+  --surface: #FFFFFF !important;
+  --surface-hover: #F5F0E8 !important;
+  --text: #1A1A1A !important;
+  --text-secondary: #555555 !important;
+  --text-light: #888888 !important;
+  --accent: #C5A059 !important;
+  --accent-glow: rgba(197, 160, 89, 0.1) !important;
+  --border: rgba(197, 160, 89, 0.12) !important;
 
-  /* ظلال احترافية متعددة الطبقات */
-  --shadow-sm: 0 2px 4px rgba(61, 43, 20, 0.04), 0 4px 8px rgba(61, 43, 20, 0.03) !important;
-  --shadow-md: 0 10px 20px rgba(61, 43, 20, 0.06), 0 6px 6px rgba(61, 43, 20, 0.04) !important;
-  --shadow-lg: 0 20px 40px rgba(61, 43, 20, 0.08), 0 15px 12px rgba(61, 43, 20, 0.05) !important;
-  --shadow-glow: 0 0 25px rgba(200, 134, 10, 0.08) !important;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04), 0 4px 8px rgba(0, 0, 0, 0.03) !important;
+  --shadow-md: 0 10px 20px rgba(0, 0, 0, 0.06), 0 6px 6px rgba(0, 0, 0, 0.04) !important;
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.08), 0 15px 12px rgba(0, 0, 0, 0.05) !important;
+  --shadow-glow: 0 0 25px rgba(197, 160, 89, 0.08) !important;
 
-  --gradient-alt: linear-gradient(165deg, #ffffff 0%, #fdf9f2 100%) !important;
+  --gradient-alt: linear-gradient(165deg, #ffffff 0%, #F5F0E8 100%) !important;
   --navbar-bg: rgba(255, 255, 255, 0.85) !important;
 }
 
 /* ===== تحسينات شاملة للوضع الفاتح ليكون مبهراً ===== */
 [data-theme="light"] .navbar {
   background: rgba(250, 247, 242, 0.82) !important;
-  border-bottom: 1px solid rgba(200, 134, 10, 0.08) !important;
+  border-bottom: 1px solid rgba(197, 160, 89, 0.08) !important;
 }
 
 [data-theme="light"] .navbar.scrolled {
@@ -86,7 +83,7 @@ body.light-mode {
 
 [data-theme="light"] .product-card {
   background: var(--surface) !important;
-  border: 1px solid rgba(200, 134, 10, 0.08) !important;
+  border: 1px solid rgba(197, 160, 89, 0.08) !important;
   box-shadow: var(--shadow-sm) !important;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -102,7 +99,7 @@ body.light-mode {
 [data-theme="light"] .category-card,
 [data-theme="light"] .feature-card {
   background: #ffffff !important;
-  border: 1px solid rgba(200, 134, 10, 0.05) !important;
+  border: 1px solid rgba(197, 160, 89, 0.05) !important;
   box-shadow: var(--shadow-lg) !important;
 }
 
@@ -110,7 +107,7 @@ body.light-mode {
 [data-theme="light"] textarea,
 [data-theme="light"] select {
   background: #fff;
-  border-color: rgba(200, 134, 10, 0.15);
+  border-color: rgba(197, 160, 89, 0.15);
   color: var(--text);
 }
 
@@ -118,7 +115,7 @@ body.light-mode {
 [data-theme="light"] textarea:focus {
   background: #ffffff;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(200, 134, 10, 0.08);
+  box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.08);
 }
 
 [data-theme="light"] .nav-link {
@@ -128,37 +125,37 @@ body.light-mode {
 
 [data-theme="light"] .nav-link:hover,
 [data-theme="light"] .nav-link.active {
-  color: #c8860a;
-  background: rgba(200, 134, 10, 0.08);
+  color: #C5A059;
+  background: rgba(197, 160, 89, 0.08);
 }
 
 [data-theme="light"] .footer {
   background: #fffdfa !important;
-  border-top: 1px solid rgba(200, 134, 10, 0.05) !important;
+  border-top: 1px solid rgba(197, 160, 89, 0.05) !important;
 }
 
 [data-theme="light"] .btn-primary {
-  box-shadow: 0 4px 15px rgba(200, 134, 10, 0.2);
+  box-shadow: 0 4px 15px rgba(197, 160, 89, 0.2);
 }
 
 [data-theme="light"] .navbar-brand span {
-  color: #c8860a !important;
+  color: #C5A059 !important;
   font-weight: 800;
 }
 
 [data-theme="light"] .mobile-menu-header span {
-  color: #c8860a !important;
+  color: #C5A059 !important;
 }
 
 [data-theme="light"] .nav-icon-btn {
   color: #4a3722;
-  background: rgba(200, 134, 10, 0.04);
+  background: rgba(197, 160, 89, 0.04);
   border-radius: 12px;
 }
 
 [data-theme="light"] .nav-icon-btn:hover {
-  background: rgba(200, 134, 10, 0.1);
-  color: #c8860a;
+  background: rgba(197, 160, 89, 0.1);
+  color: #C5A059;
 }
 
 /* حل مشكلة السكرول بار في الوضع الفاتح */
@@ -167,7 +164,7 @@ body.light-mode {
 }
 
 [data-theme="light"]::-webkit-scrollbar-thumb {
-  background: #d49a2a !important;
+  background: #C5A059 !important;
 }
 
 
@@ -388,7 +385,7 @@ ol {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(13, 10, 6, 0.85);
+  background: rgba(10, 10, 10, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
@@ -396,7 +393,7 @@ ol {
 }
 
 .navbar.scrolled {
-  background: rgba(13, 10, 6, 0.95);
+  background: rgba(10, 10, 10, 0.95);
   box-shadow: var(--shadow-md);
 }
 
@@ -452,7 +449,7 @@ ol {
 .nav-link:hover,
 .nav-link.active {
   color: var(--accent);
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
 }
 
 .nav-link.active::after {
@@ -481,14 +478,14 @@ ol {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   color: var(--text-secondary);
   transition: var(--transition);
   border: 1px solid transparent;
 }
 
 .nav-icon-btn:hover {
-  background: rgba(200, 134, 10, 0.2);
+  background: rgba(197, 160, 89, 0.2);
   color: var(--accent);
   border-color: var(--border);
   transform: translateY(-2px);
@@ -516,7 +513,7 @@ ol {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   color: var(--text-secondary);
   align-items: center;
   justify-content: center;
@@ -598,7 +595,7 @@ ol {
 }
 
 .hero-bg.is-logo {
-  background: #0D0A06;
+  background: #0A0A0A;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -606,18 +603,18 @@ ol {
 
 .hero-bg.is-logo img {
   width: auto;
-  height: 70%;
-  max-width: 80%;
+  height: 65%;
+  max-width: 70%;
   object-fit: contain;
-  opacity: 0.3;
-  filter: blur(2px) brightness(0.7);
+  opacity: 0.15;
+  filter: invert(1) sepia(1) saturate(3) hue-rotate(15deg) brightness(0.7);
 }
 
 .hero-bg::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(13, 10, 6, 0.92) 0%, rgba(26, 20, 8, 0.75) 50%, rgba(200, 134, 10, 0.1) 100%);
+  background: linear-gradient(135deg, rgba(10, 10, 10, 0.92) 0%, rgba(20, 20, 20, 0.75) 50%, rgba(197, 160, 89, 0.1) 100%);
 }
 
 .hero-content {
@@ -632,7 +629,7 @@ ol {
   align-items: center;
   gap: 8px;
   padding: 8px 20px;
-  background: rgba(200, 134, 10, 0.15);
+  background: rgba(197, 160, 89, 0.15);
   border: 1px solid var(--border);
   border-radius: 50px;
   color: var(--accent);
@@ -723,7 +720,7 @@ ol {
 
 .btn-primary {
   background: var(--gradient);
-  color: #1a1408;
+  color: #141414;
   box-shadow: 0 4px 15px var(--accent-glow);
 }
 
@@ -739,7 +736,7 @@ ol {
 }
 
 .btn-secondary:hover {
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   border-color: var(--primary);
 }
 
@@ -795,7 +792,7 @@ ol {
   align-items: center;
   gap: 6px;
   padding: 6px 16px;
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   border: 1px solid var(--border);
   border-radius: 50px;
   color: var(--accent);
@@ -977,7 +974,7 @@ ol {
 
 .product-action-btn:hover {
   background: var(--primary);
-  color: #1a1408;
+  color: #141414;
 }
 
 .product-action-btn.favorited {
@@ -1208,7 +1205,7 @@ ol {
 
 .quantity-selector button:hover {
   background: var(--primary);
-  color: #1a1408;
+  color: #141414;
   border-color: var(--primary);
 }
 
@@ -1243,7 +1240,7 @@ ol {
 
 .tag {
   padding: 4px 14px;
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   border: 1px solid var(--border);
   border-radius: 50px;
   font-size: 0.8rem;
@@ -1365,7 +1362,7 @@ ol {
 
 .cart-item-controls button:hover {
   background: var(--primary);
-  color: #1a1408;
+  color: #141414;
 }
 
 .cart-item-controls span {
@@ -1571,7 +1568,7 @@ ol {
 .filter-btn:hover,
 .filter-btn.active {
   background: var(--primary);
-  color: #1a1408;
+  color: #141414;
   border-color: var(--primary);
 }
 
@@ -1618,7 +1615,7 @@ ol {
   width: 60px;
   height: 60px;
   border-radius: var(--radius-md);
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1744,7 +1741,7 @@ ol {
 }
 
 .chat-message.admin .chat-bubble {
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   border-color: var(--primary);
 }
 
@@ -1838,7 +1835,7 @@ ol {
 
 .admin-nav-item:hover,
 .admin-nav-item.active {
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   color: var(--accent);
 }
 
@@ -1894,7 +1891,7 @@ ol {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  background: rgba(200, 134, 10, 0.1);
+  background: rgba(197, 160, 89, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1944,7 +1941,7 @@ ol {
 }
 
 .admin-table tr:hover {
-  background: rgba(200, 134, 10, 0.05);
+  background: rgba(197, 160, 89, 0.05);
 }
 
 .admin-table .status-badge {
