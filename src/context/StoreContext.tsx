@@ -256,6 +256,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     // ===== المزامنة مع Firestore (البيانات العامة) =====
     async function syncToFirestore(action: StoreAction) {
+        if (!user) return;
+        const isAdmin = user.email === 'alharth465117@gmail.com';
+        
         try {
             switch (action.type) {
                 case 'ADD_PRODUCT':
