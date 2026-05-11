@@ -71,6 +71,8 @@ export default function AdminPage() {
     }, [s, activeTab, uploading]);
     const [selectedChatPhone, setSelectedChatPhone] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
+    const chatEndRef = useRef<HTMLDivElement>(null);
+    const isFirstChatLoad = useRef(true);
 
     // Banner states
     const [showBannerModal, setShowBannerModal] = useState(false);
@@ -850,11 +852,8 @@ export default function AdminPage() {
 
     useEffect(() => {
         if (selectedChatPhone) {
-            if (isFirstChatLoad.current) {
-                isFirstChatLoad.current = false;
-                return;
-            }
-            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            chatEndRef.current?.scrollIntoView({ behavior: isFirstChatLoad.current ? 'auto' : 'smooth' });
+            isFirstChatLoad.current = false;
         } else {
             isFirstChatLoad.current = true;
         }
@@ -943,9 +942,9 @@ export default function AdminPage() {
                                     <Trash2 size={14} />
                                 </button>
                             </div>
-                            <div style={{ flex: 1, padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '500px' }}>
+                            <div style={{ flex: 1, padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '500px', direction: 'ltr' }}>
                                 {activeChat.map(msg => (
-                                    <div key={msg.id} style={{ alignSelf: msg.isFromAdmin ? 'flex-end' : 'flex-start', maxWidth: '70%', background: msg.isFromAdmin ? 'var(--accent)' : 'var(--bg)', color: msg.isFromAdmin ? '#fff' : 'var(--text)', borderRadius: 12, padding: '10px 14px', fontSize: '0.9rem' }}>
+                                    <div key={msg.id} style={{ alignSelf: msg.isFromAdmin ? 'flex-end' : 'flex-start', maxWidth: '70%', background: msg.isFromAdmin ? 'var(--accent)' : 'var(--bg)', color: msg.isFromAdmin ? '#fff' : 'var(--text)', borderRadius: 12, padding: '10px 14px', fontSize: '0.9rem', direction: 'rtl' }}>
                                         {msg.content}
                                         <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4 }}>{formatDate(msg.createdAt)}</div>
                                     </div>
