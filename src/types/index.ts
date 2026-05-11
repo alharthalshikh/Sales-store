@@ -22,6 +22,7 @@ export interface Product {
     categoryId: string;
     image: string;
     images?: string[];
+    videoUrl?: string; // رابط فيديو يوتيوب أو درايف
     weight?: string;
     inStock: boolean;
     stockQuantity: number; // عدد القطع المتاحة في المخزون

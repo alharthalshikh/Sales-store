@@ -29,7 +29,7 @@ type AdminTab = 'dashboard' | 'products' | 'categories' | 'orders' | 'customers'
 // ============================================
 const emptyProduct: Partial<Product> = {
     name: '', nameEn: '', description: '', price: 0, originalPrice: undefined,
-    image: '', images: [], categoryId: '', weight: '', tags: [],
+    image: '', images: [], videoUrl: '', categoryId: '', weight: '', tags: [],
     specifications: {}, inStock: true, stockQuantity: 0, lowStockThreshold: 5,
     featured: false, rating: 5, reviewCount: 0,
 };
@@ -572,6 +572,11 @@ export default function AdminPage() {
                                 <input value={productForm.weight || ''} onChange={e => setProductForm(p => ({ ...p, weight: e.target.value }))}
                                     style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
                             </div>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>🎬 رابط الفيديو (يوتيوب أو درايف)</label>
+                            <input value={productForm.videoUrl || ''} onChange={e => setProductForm(p => ({ ...p, videoUrl: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..."
+                                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
                         </div>
                         <div>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الوصف</label>

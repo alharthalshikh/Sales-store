@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ShoppingCart, Heart, Share2, Minus, Plus, ChevronLeft, Star, Send } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, Minus, Plus, ChevronLeft, Star, Send, X } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
 import { showToast } from '../components/ToastContainer';
@@ -30,6 +30,22 @@ export default function ProductDetailPage() {
     const reviews = state.reviews.filter(r => r.productId === id).sort((a, b) => b.createdAt - a.createdAt);
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [reviewForm, setReviewForm] = useState({ name: '', rating: 5, comment: '' });
+    const [showVideo, setShowVideo] = useState(false);
+
+    // دالة لتحويل روابط يوتيوب ودرايف إلى روابط تضمين (Embed)
+    const getEmbedUrl = (url: string) => {
+        if (!url) return '';
+        if (url.includes('youtube.com/watch?v=')) {
+            return url.replace('watch?v=', 'embed/');
+        }
+        if (url.includes('youtu.be/')) {
+            return url.replace('youtu.be/', 'youtube.com/embed/');
+        }
+        if (url.includes('drive.google.com/file/d/')) {
+            return url.replace('/view?usp=sharing', '/preview').replace('/view', '/preview');
+        }
+        return url;
+    };
 
     if (!product) {
         return (
@@ -320,8 +336,75 @@ export default function ProductDetailPage() {
                             </button>
                             <button className="btn btn-secondary" onClick={handleShare}><Share2 size={20} /></button>
                         </div>
+
+                        {product.videoUrl && (
+                            <div style={{ marginTop: '20px' }}>
+                                <button
+                                    onClick={() => setShowVideo(true)}
+                                    className="btn btn-secondary"
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        borderRadius: '16px',
+                                        background: 'rgba(197, 160, 89, 0.1)',
+                                        border: '1px solid var(--accent)',
+                                        color: 'var(--accent)',
+                                        fontWeight: 700,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '10px',
+                                        transition: '0.3s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        (e.currentTarget as HTMLElement).style.background = 'var(--accent)';
+                                        (e.currentTarget as HTMLElement).style.color = '#000';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        (e.currentTarget as HTMLElement).style.background = 'rgba(197, 160, 89, 0.1)';
+                                        (e.currentTarget as HTMLElement).style.color = 'var(--accent)';
+                                    }}
+                                >
+                                    <Send size={20} style={{ transform: 'rotate(-45deg)' }} />
+                                    🎬 استعراض المنتج بالفيديو
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* 🎥 Video Modal */}
+                {showVideo && product.videoUrl && (
+                    <div style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                        backdropFilter: 'blur(10px)'
+                    }} onClick={() => setShowVideo(false)}>
+                        <div style={{
+                            width: '100%', maxWidth: '900px', aspectRatio: '16/9', background: '#000',
+                            borderRadius: '24px', overflow: 'hidden', position: 'relative',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)'
+                        }} onClick={e => e.stopPropagation()}>
+                            <button
+                                onClick={() => setShowVideo(false)}
+                                style={{
+                                    position: 'absolute', top: 20, right: 20, zIndex: 10,
+                                    background: 'rgba(255,255,255,0.2)', color: '#fff',
+                                    border: 'none', borderRadius: '50%', width: 44, height: 44,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                                }}
+                            >
+                                <X size={24} />
+                            </button>
+                            <iframe
+                                src={getEmbedUrl(product.videoUrl)}
+                                style={{ width: '100%', height: '100%', border: 'none' }}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            ></iframe>
+                        </div>
+                    </div>
+                )}
 
                 {/* ⭐ قسم التقييمات والمراجعات */}
                 <div style={{ paddingTop: '50px' }}>
