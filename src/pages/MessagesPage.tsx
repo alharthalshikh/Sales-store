@@ -138,7 +138,7 @@ export default function MessagesPage() {
                                         className="btn btn-danger btn-small" 
                                         style={{ padding: '6px 12px', fontSize: '0.75rem' }}
                                         onClick={() => {
-                                            if (window.confirm('هل أنت متأكد من مسح المحادثة؟')) {
+                                            if (window.confirm('هل أنت متأكد من مسح المحادثة من عندك؟ ستبقى نسخة لدى الإدارة للمراجعة.')) {
                                                 dispatch({ type: 'CLEAR_USER_MESSAGES', userId: user?.uid, phone: senderPhone });
                                             }
                                         }}
