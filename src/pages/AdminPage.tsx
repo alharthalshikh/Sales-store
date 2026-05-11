@@ -205,7 +205,7 @@ export default function AdminPage() {
     const allTabs: { id: AdminTab; label: string; icon: React.ReactNode; badge?: number }[] = [
         { id: 'dashboard', label: 'لوحة التحكم', icon: <LayoutDashboard size={18} /> },
         { id: 'products', label: 'المنتجات', icon: <Package size={18} /> },
-        { id: 'categories', label: 'الأصناف', icon: <Tags size={18} /> },
+        { id: 'categories', label: 'الأقسام', icon: <Tags size={18} /> },
         { id: 'orders', label: 'الطلبات', icon: <ShoppingBag size={18} />, badge: newOrdersCount || undefined },
         { id: 'customers', label: 'العملاء', icon: <Users size={18} /> },
         { id: 'messages', label: 'الرسائل', icon: <MessageCircle size={18} />, badge: unreadMessages || undefined },
@@ -244,7 +244,7 @@ export default function AdminPage() {
 
     const saveProduct = () => {
         if (!productForm.name || !productForm.price || !productForm.image || !productForm.categoryId) {
-            showToast('يرجى ملء جميع الحقول المطلوبة (الاسم، السعر، الصورة، الصنف)', 'error');
+            showToast('يرجى ملء جميع الحقول المطلوبة (الاسم، السعر، الصورة، القسم)', 'error');
             return;
         }
         const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
@@ -354,7 +354,7 @@ export default function AdminPage() {
 
     const saveCategory = () => {
         if (!categoryForm.name || !categoryForm.icon) {
-            showToast('يرجى ملء اسم الصنف والأيقونة', 'error');
+            showToast('يرجى ملء اسم القسم والأيقونة', 'error');
             return;
         }
         const category: Category = {
@@ -367,10 +367,10 @@ export default function AdminPage() {
         };
         if (editingCategoryId) {
             dispatch({ type: 'UPDATE_CATEGORY', category });
-            showToast('تم تحديث الصنف ✅');
+            showToast('تم تحديث القسم ✅');
         } else {
             dispatch({ type: 'ADD_CATEGORY', category });
-            showToast('تم إضافة الصنف 🎉');
+            showToast('تم إضافة القسم 🎉');
         }
         setShowCategoryModal(false);
     };
@@ -494,7 +494,7 @@ export default function AdminPage() {
                 ) : (
                     <div className="admin-table-container">
                         <table className="admin-table">
-                            <thead><tr><th>الصورة</th><th>المنتج</th><th>الصنف</th><th>السعر</th><th>المخزون</th><th>الحالة</th><th>مميز</th><th>إجراءات</th></tr></thead>
+                            <thead><tr><th>الصورة</th><th>المنتج</th><th>القسم</th><th>السعر</th><th>المخزون</th><th>الحالة</th><th>مميز</th><th>إجراءات</th></tr></thead>
                             <tbody>
                                 {state.products.map(p => {
                                     const qty = p.stockQuantity ?? 0;
@@ -547,7 +547,7 @@ export default function AdminPage() {
     const renderCategories = () => (
         <div>
             <div className="admin-section-header">
-                <h3>📂 إدارة الأصناف ({state.categories.length})</h3>
+                <h3>📂 إدارة الأقسام ({state.categories.length})</h3>
                 <button className="btn btn-primary" onClick={openAddCategory}><Plus size={18} /> إضافة صنف</button>
             </div>
             {state.categories.length === 0 ? (
@@ -565,7 +565,7 @@ export default function AdminPage() {
                             <div style={{ display: 'flex', gap: 6 }}>
                                 <button className="btn btn-secondary btn-small" onClick={() => openEditCategory(cat)}><Edit size={14} /></button>
                                 <button className="btn btn-danger btn-small" onClick={() => {
-                                    confirmAction('حذف صنف', 'حذف هذا الصنف؟', () => {
+                                    confirmAction('حذف قسم', 'حذف هذا القسم؟', () => {
                                         dispatch({ type: 'DELETE_CATEGORY', categoryId: cat.id });
                                         showToast('تم الحذف', 'warning');
                                     });
@@ -1324,15 +1324,15 @@ export default function AdminPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                     <button className="btn btn-danger" onClick={() => {
-                        confirmAction('مسح شامل للأصناف', '⚠️ هل أنت متأكد من رغبتك في حذف كافة المنتجات والأصناف والبنرات؟ سيتم مسحها من السيرفر تماماً!', () => {
+                        confirmAction('مسح شامل للأقسام', '⚠️ هل أنت متأكد من رغبتك في حذف كافة المنتجات والأقسام والبنرات؟ سيتم مسحها من السيرفر تماماً!', () => {
                             dispatch({ type: 'CLEAR_PRODUCTS' });
                             dispatch({ type: 'CLEAR_CATEGORIES' });
                             dispatch({ type: 'DELETE_BANNER', bannerId: 'b1' });
                             dispatch({ type: 'DELETE_BANNER', bannerId: 'b2' });
-                            showToast('تم حذف كافة المنتجات والأصناف والبنرات بنجاح 🗑️', 'warning');
+                            showToast('تم حذف كافة المنتجات والأقسام والبنرات بنجاح 🗑️', 'warning');
                         });
                     }} style={{ background: '#7f1d1d' }}>
-                        <Trash2 size={16} /> إفراغ المنتجات والأصناف (بياناتي)
+                        <Trash2 size={16} /> إفراغ المنتجات والأقسام (بياناتي)
                     </button>
 
                     <button className="btn btn-danger" onClick={() => {
@@ -1564,10 +1564,10 @@ export default function AdminPage() {
                                     )}
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الصنف *</label>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>القسم *</label>
                                     <select value={productForm.categoryId || ''} onChange={e => setProductForm(p => ({ ...p, categoryId: e.target.value }))}
                                         style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }}>
-                                        <option value="">اختر الصنف</option>
+                                        <option value="">اختر القسم</option>
                                         {state.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                                     </select>
                                 </div>
@@ -1626,13 +1626,13 @@ export default function AdminPage() {
                 <div className="modal-overlay" onClick={() => setShowCategoryModal(false)}>
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2>{editingCategoryId ? '✏️ تعديل الصنف' : '➕ إضافة صنف جديد'}</h2>
+                            <h2>{editingCategoryId ? '✏️ تعديل القسم' : '➕ إضافة قسم جديد'}</h2>
                             <button className="nav-icon-btn" onClick={() => setShowCategoryModal(false)}><X size={20} /></button>
                         </div>
                         <div className="modal-body">
                             <div style={{ display: 'grid', gap: 16 }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>اسم الصنف *</label>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>اسم القسم *</label>
                                     <input value={categoryForm.name || ''} onChange={e => setCategoryForm(c => ({ ...c, name: e.target.value }))}
                                         style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
                                 </div>
@@ -1647,7 +1647,7 @@ export default function AdminPage() {
                                         style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1.5rem' }} />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>صورة الصنف</label>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>صورة القسم</label>
                                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                                         <input value={categoryForm.image || ''} onChange={e => setCategoryForm(c => ({ ...c, image: e.target.value }))} placeholder="رابط الصورة أو ارفع من جهازك"
                                             style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
@@ -1749,7 +1749,7 @@ export default function AdminPage() {
                                             <option value="/track">🚚 تتبع الطلبات</option>
                                             <option value="/orders">📑 طلباتي</option>
                                         </optgroup>
-                                        <optgroup label="📂 الأصناف">
+                                        <optgroup label="📂 الأقسام">
                                             {state.categories.map(c => (
                                                 <option key={c.id} value={`/products?category=${c.id}`}>
                                                     {c.icon} {c.name}

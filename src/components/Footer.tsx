@@ -37,7 +37,7 @@ export default function Footer() {
                         </div>
                     </div>
                     <div>
-                        <h4>الأصناف</h4>
+                        <h4>الأقسام</h4>
                         <div className="footer-links">
                             {state.categories.map(cat => (
                                 <Link key={cat.id} to={`/products?category=${cat.id}`}>

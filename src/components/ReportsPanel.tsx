@@ -233,8 +233,8 @@ export default function ReportsPanel() {
                 <Table heads={['المنتج', 'الكمية', 'الإيرادات']} rows={sales.slice(0, 10).map(p => [p.name, p.qty, `${p.rev.toFixed(0)} ${cur}`])} />
             </Section>
 
-            <Section title="3️⃣ أداء الأصناف">
-                <Table heads={['الصنف', 'القطع المباعة', 'الإيرادات']} rows={catSales.map(c => [c.name, c.qty, `${c.rev.toFixed(0)} ${cur}`])} />
+            <Section title="3️⃣ أداء الأقسام">
+                <Table heads={['القسم', 'القطع المباعة', 'الإيرادات']} rows={catSales.map(c => [c.name, c.qty, `${c.rev.toFixed(0)} ${cur}`])} />
             </Section>
 
             <Section title="4️⃣ تحليل العملاء">
@@ -289,8 +289,8 @@ export default function ReportsPanel() {
                 <Table heads={['#', 'المنتج', 'الكمية', 'الإيرادات']} rows={sales.slice(0, 10).map((p, i) => [i + 1, p.name, p.qty, `${p.rev.toFixed(0)} ${cur}`])} />
             </Section>
 
-            <Section title="4️⃣ المبيعات حسب الصنف">
-                <Table heads={['الصنف', 'القطع', 'الإيرادات', 'النسبة']} rows={catSales.map(c => [c.name, c.qty, `${c.rev.toFixed(0)} ${cur}`, `${monthRev > 0 ? (c.rev / monthRev * 100).toFixed(0) : 0}%`])} />
+            <Section title="4️⃣ المبيعات حسب القسم">
+                <Table heads={['القسم', 'القطع', 'الإيرادات', 'النسبة']} rows={catSales.map(c => [c.name, c.qty, `${c.rev.toFixed(0)} ${cur}`, `${monthRev > 0 ? (c.rev / monthRev * 100).toFixed(0) : 0}%`])} />
             </Section>
 
             <Section title="5️⃣ تحليل العملاء">
@@ -341,8 +341,8 @@ export default function ReportsPanel() {
                 </div>
             </Section>
 
-            <Section title="3️⃣ تحليل السوق والأصناف">
-                <Table heads={['الصنف', 'القطع المباعة', 'الإيرادات', 'النسبة']}
+            <Section title="3️⃣ تحليل السوق والأقسام">
+                <Table heads={['القسم', 'القطع المباعة', 'الإيرادات', 'النسبة']}
                     rows={catSales.map(c => [c.name, c.qty, `${c.rev.toFixed(0)} ${cur}`, `${yearRev > 0 ? (c.rev / yearRev * 100).toFixed(0) : 0}%`])} />
             </Section>
 
