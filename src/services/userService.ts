@@ -29,7 +29,6 @@ export async function getUsers(filters: { role?: string, searchQuery?: string, l
 
         const q = query(collection(db, USERS_COLLECTION), ...constraints);
         const snapshot = await getDocs(q);
-        console.log(`🔍 Firestore: Found ${snapshot.docs.length} users in collection "${USERS_COLLECTION}"`);
 
         let allUsers = snapshot.docs.map(docSnap => ({
             id: docSnap.id,

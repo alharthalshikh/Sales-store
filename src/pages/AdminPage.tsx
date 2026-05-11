@@ -1429,7 +1429,7 @@ export default function AdminPage() {
                     <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                         {s.storeLogo?.startsWith('<svg') ? (
                             <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: s.storeLogo }} />
-                        ) : s.storeLogo?.startsWith('http') ? (
+                        ) : (s.storeLogo?.startsWith('http') || s.storeLogo?.startsWith('/') || s.storeLogo?.includes('.')) ? (
                             <img src={s.storeLogo} alt="Logo" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'contain' }} />
                         ) : (
                             <span>{s.storeLogo}</span>

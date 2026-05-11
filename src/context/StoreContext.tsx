@@ -532,14 +532,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                             ...dbToCustomer({ ...d.data(), id: d.id }),
                             role: d.data().role || 'customer'
                         }));
-                        console.log(`✅ Admin fetch: ${usersSnap.docs.length} users loaded from Firestore`);
                     }
-
-                    console.log('📤 Dispatching private user data load...', {
-                        orders: results.orders?.length,
-                        messages: results.messages?.length,
-                        customers: results.customers?.length
-                    });
 
                     baseDispatch({ type: 'LOAD_STATE', state: results });
                 } catch (err) {

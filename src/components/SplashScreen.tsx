@@ -19,7 +19,7 @@ export default function SplashScreen() {
         return { name: '', logo: '' };
     }, []);
 
-    const isLogoUrl = cached.logo && (cached.logo.startsWith('http') || cached.logo.startsWith('data:'));
+    const isLogoUrl = cached.logo && (cached.logo.startsWith('http') || cached.logo.startsWith('data:') || cached.logo.startsWith('/') || cached.logo.includes('.png') || cached.logo.includes('.jpg') || cached.logo.includes('.svg'));
 
     return (
         <div style={{

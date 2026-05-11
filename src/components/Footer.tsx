@@ -14,7 +14,7 @@ export default function Footer() {
                         <div className="footer-brand">
                             {s.storeLogo?.startsWith('<svg') ? (
                                 <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: s.storeLogo }} />
-                            ) : s.storeLogo?.startsWith('http') ? (
+                            ) : (s.storeLogo?.startsWith('http') || s.storeLogo?.startsWith('/') || s.storeLogo?.includes('.png') || s.storeLogo?.includes('.jpg') || s.storeLogo?.includes('.svg')) ? (
                                 <img src={s.storeLogo} alt="Logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
                             ) : (
                                 <span>{s.storeLogo}</span>
