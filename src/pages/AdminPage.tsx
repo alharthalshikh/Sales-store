@@ -833,6 +833,9 @@ export default function AdminPage() {
     );
 
 
+    const chatEndRef = useRef<HTMLDivElement>(null);
+    const isFirstChatLoad = useRef(true);
+
     // تحديث الرسائل كـ "مقروءة" تلقائياً عند فتح المحادثة ووصول رسائل جديدة
     useEffect(() => {
         if (selectedChatPhone) {
@@ -879,7 +882,7 @@ export default function AdminPage() {
             <div>
                 <div className="admin-section-header">
                     <h3>💬 المحادثات ({phones.length})</h3>
-                    <button 
+                    <button
                         onClick={async () => {
                             const { collection, getDocs } = await import('firebase/firestore');
                             const { db } = await import('../lib/firebase');
@@ -930,7 +933,7 @@ export default function AdminPage() {
                                     onClick={() => {
                                         confirmAction('حذف المحادثة', 'هل أنت متأكد من حذف هذه المحادثة بالكامل؟ لا يمكن التراجع', () => {
                                             const original = activeChat[0];
-                                            dispatch({ type: 'CLEAR_USER_MESSAGES', userId: original.userId, phone: original.senderPhone, isAdmin: true });
+                                            dispatch({ type: 'CLEAR_USER_MESSAGES', userId: original.userId, phone: original.senderPhone });
                                             setSelectedChatPhone(null);
                                             showToast('تم حذف المحادثة بنجاح 🗑️', 'warning');
                                         });
@@ -941,28 +944,9 @@ export default function AdminPage() {
                             </div>
                             <div style={{ flex: 1, padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '500px', direction: 'ltr' }}>
                                 {activeChat.map(msg => (
-                                    <div key={msg.id} className="admin-msg-bubble" style={{ 
-                                        alignSelf: msg.isFromAdmin ? 'flex-end' : 'flex-start', 
-                                        maxWidth: '70%', 
-                                        background: msg.isFromAdmin ? 'var(--accent)' : 'var(--bg)', 
-                                        color: msg.isFromAdmin ? '#fff' : 'var(--text)', 
-                                        borderRadius: 12, 
-                                        padding: '10px 14px', 
-                                        fontSize: '0.9rem', 
-                                        direction: 'rtl',
-                                        position: 'relative'
-                                    }}>
+                                    <div key={msg.id} style={{ alignSelf: msg.isFromAdmin ? 'flex-end' : 'flex-start', maxWidth: '70%', background: msg.isFromAdmin ? 'var(--accent)' : 'var(--bg)', color: msg.isFromAdmin ? '#fff' : 'var(--text)', borderRadius: 12, padding: '10px 14px', fontSize: '0.9rem', direction: 'rtl' }}>
                                         {msg.content}
-                                        <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span>{formatDate(msg.createdAt)}</span>
-                                            <button 
-                                                onClick={() => { if(window.confirm('حذف هذه الرسالة للطرفين؟')) dispatch({ type: 'DELETE_MESSAGE', messageId: msg.id, isAdmin: true }); }}
-                                                style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0 4px', opacity: 0.5 }}
-                                                title="حذف للطرفين"
-                                            >
-                                                <X size={12} />
-                                            </button>
-                                        </div>
+                                        <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4 }}>{formatDate(msg.createdAt)}</div>
                                     </div>
                                 ))}
                                 <div ref={chatEndRef} />
@@ -1619,91 +1603,91 @@ export default function AdminPage() {
 
     return (
         <>
-        <div className="admin-layout">
-            {/* زر العودة للمتجر في الجوال */}
-            <button
-                className="mobile-back-btn"
-                onClick={() => navigate('/')}
-                title="العودة للمتجر"
-            >
-                <Home size={20} />
-            </button>
+            <div className="admin-layout">
+                {/* زر العودة للمتجر في الجوال */}
+                <button
+                    className="mobile-back-btn"
+                    onClick={() => navigate('/')}
+                    title="العودة للمتجر"
+                >
+                    <Home size={20} />
+                </button>
 
-            {/* Sidebar (Hidden on mobile, replaced by bottom nav) */}
-            <aside className="admin-sidebar">
-                <div style={{ marginBottom: '24px', textAlign: 'center', padding: '10px 0' }}>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                        {s.storeLogo?.startsWith('<svg') ? (
-                            <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: s.storeLogo }} />
-                        ) : (s.storeLogo?.startsWith('http') || s.storeLogo?.startsWith('/') || s.storeLogo?.includes('.')) ? (
-                            <img src={s.storeLogo} alt="Logo" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'contain' }} />
-                        ) : (
-                            <span>{s.storeLogo}</span>
-                        )}
-                        لوحة التحكم
+                {/* Sidebar (Hidden on mobile, replaced by bottom nav) */}
+                <aside className="admin-sidebar">
+                    <div style={{ marginBottom: '24px', textAlign: 'center', padding: '10px 0' }}>
+                        <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            {s.storeLogo?.startsWith('<svg') ? (
+                                <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: s.storeLogo }} />
+                            ) : (s.storeLogo?.startsWith('http') || s.storeLogo?.startsWith('/') || s.storeLogo?.includes('.')) ? (
+                                <img src={s.storeLogo} alt="Logo" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'contain' }} />
+                            ) : (
+                                <span>{s.storeLogo}</span>
+                            )}
+                            لوحة التحكم
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '4px' }}>مرحباً {adminName}</div>
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-light)', marginTop: '4px' }}>مرحباً {adminName}</div>
-                </div>
-                <nav className="admin-sidebar-nav">
-                    <button className="admin-nav-item" onClick={() => navigate('/')} style={{ color: 'var(--accent)', borderBottom: '1px solid var(--border)', marginBottom: '8px', paddingBottom: '12px' }}>
-                        <Home size={18} />
-                        المتجر الرئيسي (خروج)
+                    <nav className="admin-sidebar-nav">
+                        <button className="admin-nav-item" onClick={() => navigate('/')} style={{ color: 'var(--accent)', borderBottom: '1px solid var(--border)', marginBottom: '8px', paddingBottom: '12px' }}>
+                            <Home size={18} />
+                            المتجر الرئيسي (خروج)
+                        </button>
+                        {tabs.map(tab => (
+                            <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                                {tab.icon}
+                                {tab.label}
+                                {tab.badge !== undefined && tab.badge > 0 && (
+                                    <span style={{ marginRight: 'auto', background: 'var(--error)', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>{tab.badge}</span>
+                                )}
+                            </button>
+                        ))}
+                    </nav>
+                    <button className="btn btn-secondary" style={{ width: '100%', marginTop: '16px' }} onClick={async () => { await logout(); navigate('/login'); showToast('تم تسجيل الخروج'); }}>
+                        <LogOut size={16} /> تسجيل الخروج
                     </button>
-                    {tabs.map(tab => (
-                        <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`} onClick={() => setActiveTab(tab.id)}>
+                </aside>
+
+                {/* Mobile Bottom Navigation */}
+                <nav className="admin-mobile-nav">
+                    {tabs.slice(0, 5).map(tab => (
+                        <button
+                            key={tab.id}
+                            className={`admin-mobile-nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                            onClick={() => setActiveTab(tab.id)}
+                        >
                             {tab.icon}
-                            {tab.label}
+                            <span>{tab.label}</span>
                             {tab.badge !== undefined && tab.badge > 0 && (
-                                <span style={{ marginRight: 'auto', background: 'var(--error)', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700 }}>{tab.badge}</span>
+                                <span className="badge">{tab.badge}</span>
                             )}
                         </button>
                     ))}
-                </nav>
-                <button className="btn btn-secondary" style={{ width: '100%', marginTop: '16px' }} onClick={async () => { await logout(); navigate('/login'); showToast('تم تسجيل الخروج'); }}>
-                    <LogOut size={16} /> تسجيل الخروج
-                </button>
-            </aside>
-            
-            {/* Mobile Bottom Navigation */}
-            <nav className="admin-mobile-nav">
-                {tabs.slice(0, 5).map(tab => (
-                    <button 
-                        key={tab.id} 
-                        className={`admin-mobile-nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}
+                    <button
+                        className="admin-mobile-nav-item"
+                        onClick={() => {
+                            const nextIndex = (tabs.findIndex(t => t.id === activeTab) + 1) % tabs.length;
+                            setActiveTab(tabs[nextIndex].id);
+                        }}
                     >
-                        {tab.icon}
-                        <span>{tab.label}</span>
-                        {tab.badge !== undefined && tab.badge > 0 && (
-                            <span className="badge">{tab.badge}</span>
-                        )}
+                        <Menu size={20} />
+                        <span>المزيد</span>
                     </button>
-                ))}
-                <button 
-                    className="admin-mobile-nav-item"
-                    onClick={() => {
-                        const nextIndex = (tabs.findIndex(t => t.id === activeTab) + 1) % tabs.length;
-                        setActiveTab(tabs[nextIndex].id);
-                    }}
-                >
-                    <Menu size={20} />
-                    <span>المزيد</span>
-                </button>
-            </nav>
+                </nav>
 
-            {/* Main Content */}
-            <main className="admin-content">
-                <div className="admin-header">
-                    <h1>{tabs.find(t => t.id === activeTab)?.icon} {tabs.find(t => t.id === activeTab)?.label}</h1>
-                    <select value={activeTab} onChange={e => setActiveTab(e.target.value as AdminTab)} className="admin-mobile-select">
-                        {tabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
-                    </select>
-                </div>
-                {renderContent()}
-            </main>
-        </div>
+                {/* Main Content */}
+                <main className="admin-content">
+                    <div className="admin-header">
+                        <h1>{tabs.find(t => t.id === activeTab)?.icon} {tabs.find(t => t.id === activeTab)?.label}</h1>
+                        <select value={activeTab} onChange={e => setActiveTab(e.target.value as AdminTab)} className="admin-mobile-select">
+                            {tabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
+                        </select>
+                    </div>
+                    {renderContent()}
+                </main>
+            </div>
 
-        {/* ================== MODALS ================== */}
+            {/* ================== MODALS ================== */}
 
 
 

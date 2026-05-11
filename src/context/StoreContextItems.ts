@@ -94,7 +94,7 @@ export type StoreAction =
     | { type: 'DELETE_ORDER'; orderId: string }
     | { type: 'ADD_MESSAGE'; message: Message }
     | { type: 'MARK_MESSAGE_READ'; messageId: string }
-    | { type: 'DELETE_MESSAGE'; messageId: string; isAdmin?: boolean }
+    | { type: 'DELETE_MESSAGE'; messageId: string }
     | { type: 'ADD_REVIEW'; review: Review }
     | { type: 'DELETE_REVIEW'; reviewId: string }
     | { type: 'ADD_DISCOUNT_RULE'; rule: DiscountRule }
@@ -127,7 +127,7 @@ export type StoreAction =
     | { type: 'CLEAR_CATEGORIES' }
     | { type: 'FACTORY_RESET' }
     | { type: 'LOGOUT' }
-    | { type: 'CLEAR_USER_MESSAGES'; userId?: string; phone?: string; isAdmin?: boolean }
+    | { type: 'CLEAR_USER_MESSAGES'; userId?: string; phone?: string }
     | { type: 'LOAD_STATE'; state: Partial<StoreState> };
 
 export interface StoreContextType {

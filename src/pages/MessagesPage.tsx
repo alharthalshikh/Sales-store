@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Trash2 } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
 import ConfirmModal from '../components/ConfirmModal';
@@ -83,8 +83,6 @@ export default function MessagesPage() {
     // فلترة الرسائل للحصول على المحادثة الخاصة بهذا المستخدم فقط
     const userMessages = state.messages
         .filter(m => {
-            // إخفاء الرسائل المحذوفة من طرف المستخدم
-            if (m.deletedByUser) return false;
             if (user) return m.userId === user.uid || (m.senderPhone === userData?.phone && !m.userId);
             return m.senderPhone === senderPhone || m.senderName === senderName;
         })
@@ -136,8 +134,8 @@ export default function MessagesPage() {
                             <div className="chat-messages">
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                                     <h3 style={{ margin: 0 }}>💬 المحادثة</h3>
-                                    <button 
-                                        className="btn btn-danger btn-small" 
+                                    <button
+                                        className="btn btn-danger btn-small"
                                         style={{ padding: '6px 12px', fontSize: '0.75rem' }}
                                         onClick={() => {
                                             if (window.confirm('هل أنت متأكد من مسح المحادثة من عندك؟ ستبقى نسخة لدى الإدارة للمراجعة.')) {
@@ -161,16 +159,7 @@ export default function MessagesPage() {
                                             <div className="chat-bubble">
                                                 <div className="chat-bubble-sender">{msg.isFromAdmin ? s.storeName : msg.senderName}</div>
                                                 <div className="chat-bubble-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <div className="chat-bubble-time">{formatDate(msg.createdAt)}</div>
-                                                    <button 
-                                                        onClick={() => { if(window.confirm('حذف هذه الرسالة من عندك؟')) dispatch({ type: 'DELETE_MESSAGE', messageId: msg.id }); }}
-                                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: '0 4px', opacity: 0.6 }}
-                                                        title="مسح من عندي"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                </div>
+                                                <div className="chat-bubble-time">{formatDate(msg.createdAt)}</div>
                                             </div>
                                         </div>
                                     ))
@@ -213,5 +202,7 @@ export default function MessagesPage() {
                 cancelText="إلغاء"
             />
         </div>
+    );
+}
     );
 }
