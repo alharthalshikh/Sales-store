@@ -133,8 +133,9 @@ export default function CheckoutPage() {
                     scrollWheelZoom: true
                 }).setView([center.lat, center.lng], 15);
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
+                L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=ar', {
+                    attribution: '© Google Maps',
+                    maxZoom: 20
                 }).addTo(map);
 
                 const m = L.marker([center.lat, center.lng], { draggable: true }).addTo(map);

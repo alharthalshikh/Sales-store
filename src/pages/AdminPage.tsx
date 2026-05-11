@@ -161,7 +161,7 @@ export default function AdminPage() {
                 const lng = settingsForm.storeLng || 46.6753;
 
                 const map = L.map('admin-store-map').setView([lat, lng], 13);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=ar', { maxZoom: 20 }).addTo(map);
 
                 const m = L.marker([lat, lng], { draggable: true }).addTo(map);
 
