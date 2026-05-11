@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Package, Tags, ShoppingBag, Users, MessageCircle, MessageSquare, BarChart3,
     Percent, Plus, Edit, Trash2, Check, X, LogOut, Save,
     Eye, EyeOff, Settings, Upload, Loader2, Star, FileText, Image, Send, Home, Gift, RefreshCw, Truck, Globe, Navigation,
-    Printer, Calendar, ChevronDown
+    Printer, Calendar, ChevronDown, Menu
 } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
@@ -413,6 +413,7 @@ export default function AdminPage() {
                 )}
 
                 <div className="admin-stats">
+                    {[
                         { label: 'إجمالي المبيعات', value: `${totalRevenue.toFixed(0)} ${s.currencySymbol} `, icon: '💰' },
                         { label: 'عدد الطلبات', value: state.orders.length, icon: '📦' },
                         { label: 'طلبات معلقة', value: pendingOrdersCount, icon: '⏳' },
