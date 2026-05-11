@@ -1,6 +1,6 @@
 // ============================================================
 // 🔄 إدارة حالة المتجر الكاملة + مزامنة Firestore
-// المنتجات، الأصناف، السلة، المفضلة، الطلبات، الرسائل، العملاء، الإعدادات
+// المنتجات، الأقسام، السلة، المفضلة، الطلبات، الرسائل، العملاء، الإعدادات
 // ============================================================
 import React, { useReducer, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { CartItem, Product, Order, Message, Banner, Customer, LoyaltyReward, Category } from '../types';

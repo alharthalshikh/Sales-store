@@ -549,10 +549,10 @@ export default function AdminPage() {
         <div>
             <div className="admin-section-header">
                 <h3>📂 إدارة الأقسام ({state.categories.length})</h3>
-                <button className="btn btn-primary" onClick={openAddCategory}><Plus size={18} /> إضافة صنف</button>
+                <button className="btn btn-primary" onClick={openAddCategory}><Plus size={18} /> إضافة قسم</button>
             </div>
             {state.categories.length === 0 ? (
-                <div className="empty-state">لا توجد أصناف. أضف صنفك الأول!</div>
+                <div className="empty-state">لا توجد أقسام. أضف قسمك الأول!</div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                     {state.categories.map(cat => (
