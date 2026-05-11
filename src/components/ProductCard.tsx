@@ -54,6 +54,17 @@ export default function ProductCard({ product, index = 0 }: Props) {
     const highlightId = searchParams.get('highlight');
     const isHighlighted = highlightId === String(product.id);
 
+    const allImages = [product.image, ...(product.images || [])].filter(Boolean);
+    const [currentImgIndex, setCurrentImgIndex] = React.useState(0);
+
+    React.useEffect(() => {
+        if (allImages.length <= 1) return;
+        const interval = setInterval(() => {
+            setCurrentImgIndex(prev => (prev + 1) % allImages.length);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, [allImages.length]);
+
     return (
         <div
             id={`product-${product.id}`}
@@ -61,16 +72,33 @@ export default function ProductCard({ product, index = 0 }: Props) {
             style={{ animationDelay: `${index * 0.1}s` }}
         >
             <div className="product-card-image">
-                <Link to={`/products?category=${product.categoryId}&highlight=${product.id}`} style={{ width: '100%', height: '100%', display: 'block' }}>
-                    <img
-                        src={product.image}
-                        alt={product.name}
-                        loading="lazy"
-                        onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'https://placehold.co/400x300?text=No+Image';
-                        }}
-                    />
+                <Link to={`/product/${product.id}`} style={{ width: '100%', height: '100%', display: 'block', position: 'relative' }}>
+                    {allImages.map((img, i) => (
+                        <img
+                            key={i}
+                            src={img}
+                            alt={product.name}
+                            loading="lazy"
+                            style={{
+                                position: i === 0 ? 'relative' : 'absolute',
+                                top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover',
+                                opacity: i === currentImgIndex ? 1 : 0,
+                                transition: 'opacity 0.8s ease-in-out',
+                                zIndex: i === currentImgIndex ? 1 : 0
+                            }}
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://placehold.co/400x300?text=No+Image';
+                            }}
+                        />
+                    ))}
+                    {allImages.length > 1 && (
+                        <div style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4, zIndex: 2 }}>
+                            {allImages.map((_, i) => (
+                                <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i === currentImgIndex ? 'var(--accent)' : 'rgba(255,255,255,0.5)', transition: '0.3s' }} />
+                            ))}
+                        </div>
+                    )}
                 </Link>
                 {discount > 0 && (
                     <span className="discount-badge">خصم {Math.round(discount)}%</span>

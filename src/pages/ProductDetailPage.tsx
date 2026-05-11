@@ -15,6 +15,17 @@ export default function ProductDetailPage() {
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
 
+    const allImages = product ? [product.image, ...(product.images || [])].filter(Boolean) : [];
+
+    // تقليب تلقائي للصور
+    React.useEffect(() => {
+        if (allImages.length <= 1) return;
+        const interval = setInterval(() => {
+            setActiveImage(prev => (prev + 1) % allImages.length);
+        }, 5000); // 5 ثواني للتغيير التلقائي
+        return () => clearInterval(interval);
+    }, [allImages.length]);
+
     // التقييمات من المتجر العام
     const reviews = state.reviews.filter(r => r.productId === id).sort((a, b) => b.createdAt - a.createdAt);
     const [showReviewForm, setShowReviewForm] = useState(false);
@@ -35,7 +46,6 @@ export default function ProductDetailPage() {
     const isFavorite = state.favorites.includes(product.id);
     const discount = getAppliedDiscount(product);
     const finalPrice = getFinalPrice(product);
-    const allImages = product.images && product.images.length > 0 ? product.images : [product.image];
     const relatedProducts = state.products.filter(p => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4);
 
     // حساب متوسط التقييم الفعلي من البيانات العامة
@@ -142,20 +152,66 @@ export default function ProductDetailPage() {
 
                 <div className="product-detail-grid">
                     <div className="product-gallery">
-                        <div className="product-gallery-main">
-                            <img
-                                src={allImages[activeImage]}
-                                alt={product.name}
-                                onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.src = 'https://placehold.co/800x600?text=No+Image';
-                                }}
-                            />
+                        <div className="product-gallery-main" style={{ position: 'relative', overflow: 'hidden', borderRadius: '24px' }}>
+                            {allImages.map((img, i) => (
+                                <img
+                                    key={i}
+                                    src={img}
+                                    alt={product.name}
+                                    style={{
+                                        position: i === 0 ? 'relative' : 'absolute',
+                                        top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover',
+                                        opacity: i === activeImage ? 1 : 0,
+                                        transition: 'opacity 0.8s ease-in-out',
+                                        zIndex: i === activeImage ? 1 : 0
+                                    }}
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = 'https://placehold.co/800x600?text=No+Image';
+                                    }}
+                                />
+                            ))}
+
+                            {allImages.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); setActiveImage(prev => (prev - 1 + allImages.length) % allImages.length); }}
+                                        style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.8)', color: '#000', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    >
+                                        <ChevronLeft size={24} style={{ transform: 'rotate(180deg)' }} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.preventDefault(); setActiveImage(prev => (prev + 1) % allImages.length); }}
+                                        style={{ position: 'absolute', left: 15, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.8)', color: '#000', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                    >
+                                        <ChevronLeft size={24} />
+                                    </button>
+                                    <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8, zIndex: 10 }}>
+                                        {allImages.map((_, i) => (
+                                            <div
+                                                key={i}
+                                                onClick={() => setActiveImage(i)}
+                                                style={{ width: i === activeImage ? 24 : 8, height: 8, borderRadius: 4, background: i === activeImage ? 'var(--accent)' : 'rgba(255,255,255,0.5)', cursor: 'pointer', transition: '0.3s' }}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
                         {allImages.length > 1 && (
-                            <div className="product-gallery-thumbs">
+                            <div className="product-gallery-thumbs" style={{ marginTop: 15, display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 5 }}>
                                 {allImages.map((img, i) => (
-                                    <img key={i} src={img} alt={`${product.name} - ${i + 1}`} className={activeImage === i ? 'active' : ''} onClick={() => setActiveImage(i)} />
+                                    <div
+                                        key={i}
+                                        onClick={() => setActiveImage(i)}
+                                        style={{
+                                            width: 80, height: 80, borderRadius: 12, overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
+                                            border: `2px solid ${activeImage === i ? 'var(--accent)' : 'transparent'}`,
+                                            transition: '0.2s'
+                                        }}
+                                    >
+                                        <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
                                 ))}
                             </div>
                         )}

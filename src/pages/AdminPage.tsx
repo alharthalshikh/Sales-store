@@ -492,25 +492,71 @@ export default function AdminPage() {
                             </div>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الصورة الرئيسية *</label>
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                                <input value={productForm.image || ''} onChange={e => setProductForm(p => ({ ...p, image: e.target.value }))} placeholder="رابط الصورة"
-                                    style={{ flex: 1, minWidth: 180, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                <label style={{ cursor: uploading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: '12px 16px', background: 'var(--accent)', color: '#000', borderRadius: 10, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', opacity: uploading ? 0.6 : 1 }}>
-                                    {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
-                                    {uploading ? 'جاري...' : '📸 رفع'}
-                                    <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading} onChange={async (e) => {
-                                        const file = e.target.files?.[0]; if (!file) return;
-                                        setUploading(true);
-                                        const url = await Promise.race([uploadImage(file, 'products'), new Promise<null>(r => setTimeout(() => r(null), 30000))]);
-                                        setUploading(false);
-                                        if (url) { setProductForm(p => ({ ...p, image: url })); showToast('تم رفع الصورة 📸'); }
-                                        else showToast('فشل الرفع', 'error');
-                                        e.target.value = '';
-                                    }} />
-                                </label>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 12 }}>📸 صور المنتج (حتى 5 صور)</label>
+                            <div style={{ display: 'grid', gap: 12 }}>
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <div style={{
+                                            width: 32, height: 32, borderRadius: '50%', background: i === 0 ? 'var(--accent)' : 'var(--surface)',
+                                            color: i === 0 ? '#000' : 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '0.8rem', fontWeight: 700, border: '1px solid var(--border)'
+                                        }}>
+                                            {i + 1}
+                                        </div>
+                                        <input
+                                            value={(i === 0 ? productForm.image : productForm.images?.[i - 1]) || ''}
+                                            onChange={e => {
+                                                const url = e.target.value;
+                                                if (i === 0) setProductForm(p => ({ ...p, image: url }));
+                                                else {
+                                                    const newImages = [...(productForm.images || [])];
+                                                    newImages[i - 1] = url;
+                                                    setProductForm(p => ({ ...p, images: newImages.filter(Boolean) }));
+                                                }
+                                            }}
+                                            placeholder={i === 0 ? "رابط الصورة الرئيسية *" : `رابط الصورة الإضافية ${i}`}
+                                            style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9rem' }}
+                                        />
+                                        <label style={{ cursor: uploading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, background: 'var(--surface)', color: 'var(--accent)', borderRadius: 10, border: '1px solid var(--border)', transition: 'var(--transition)' }}>
+                                            <Upload size={18} />
+                                            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading} onChange={async (e) => {
+                                                const file = e.target.files?.[0]; if (!file) return;
+                                                setUploading(true);
+                                                const url = await uploadImage(file, 'products');
+                                                setUploading(false);
+                                                if (url) {
+                                                    if (i === 0) setProductForm(p => ({ ...p, image: url }));
+                                                    else {
+                                                        const newImages = [...(productForm.images || [])];
+                                                        newImages[i - 1] = url;
+                                                        setProductForm(p => ({ ...p, images: newImages.filter(Boolean) }));
+                                                    }
+                                                    showToast('تم رفع الصورة 📸');
+                                                } else showToast('فشل الرفع', 'error');
+                                            }} />
+                                        </label>
+                                    </div>
+                                ))}
                             </div>
-                            {productForm.image && <img src={productForm.image} alt="" style={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 8, marginTop: 8, border: '1px solid var(--border)' }} />}
+                            <div style={{ display: 'flex', gap: 8, marginTop: 12, overflowX: 'auto', paddingBottom: 8 }}>
+                                {[productForm.image, ...(productForm.images || [])].filter(Boolean).map((img, i) => (
+                                    <div key={i} style={{ position: 'relative', flexShrink: 0 }}>
+                                        <img src={img as string} alt="" style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--accent)' }} />
+                                        <button
+                                            onClick={() => {
+                                                if (i === 0) setProductForm(p => ({ ...p, image: productForm.images?.[0] || '', images: productForm.images?.slice(1) }));
+                                                else {
+                                                    const newImages = (productForm.images || []).filter((_, idx) => idx !== i - 1);
+                                                    setProductForm(p => ({ ...p, images: newImages }));
+                                                }
+                                            }}
+                                            style={{ position: 'absolute', top: -5, right: -5, background: 'var(--error)', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px' }}
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                             <div>
