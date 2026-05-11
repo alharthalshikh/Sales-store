@@ -21,14 +21,15 @@ export async function getUsers(filters: { role?: string, searchQuery?: string, l
     const offset = filters.offset || 0;
 
     try {
-        const constraints: QueryConstraint[] = [orderBy('created_at', 'desc')];
+        const constraints: QueryConstraint[] = [];
 
         if (role) {
-            constraints.unshift(where('role', '==', role));
+            constraints.push(where('role', '==', role));
         }
 
         const q = query(collection(db, USERS_COLLECTION), ...constraints);
         const snapshot = await getDocs(q);
+        console.log(`🔍 Firestore: Found ${snapshot.docs.length} users in collection "${USERS_COLLECTION}"`);
 
         let allUsers = snapshot.docs.map(docSnap => ({
             id: docSnap.id,

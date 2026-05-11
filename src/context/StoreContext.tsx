@@ -532,10 +532,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                             ...dbToCustomer({ ...d.data(), id: d.id }),
                             role: d.data().role || 'customer'
                         }));
+                        console.log(`✅ Admin fetch: ${usersSnap.docs.length} users loaded from Firestore`);
                     }
 
+                    console.log('📤 Dispatching private user data load...', {
+                        orders: results.orders?.length,
+                        messages: results.messages?.length,
+                        customers: results.customers?.length
+                    });
+
                     baseDispatch({ type: 'LOAD_STATE', state: results });
-                } catch (err) { }
+                } catch (err) {
+                    console.error('❌ Error in fetchUserData:', err);
+                }
             };
 
             fetchUserData();
@@ -605,6 +614,54 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             unsubscribers.forEach(unsub => unsub());
         };
     }, []);
+
+    // ===== مراقبة البيانات الخاصة (المستخدمون، الطلبات، الرسائل) =====
+    useEffect(() => {
+        if (!user) return;
+        const unsubscribers: (() => void)[] = [];
+
+        if (isAdmin) {
+            // الأدمن يراقب كل المستخدمين والطلبات والرسائل
+            unsubscribers.push(onSnapshot(collection(db, 'users'), (snap) => {
+                const customers = snap.docs.map(d => ({
+                    ...dbToCustomer({ ...d.data(), id: d.id }),
+                    role: d.data().role || 'customer'
+                }));
+                baseDispatch({ type: 'LOAD_STATE', state: { customers } });
+            }));
+
+            unsubscribers.push(onSnapshot(collection(db, 'orders'), (snap) => {
+                const orders = snap.docs.map(d => dbToOrder({ ...d.data(), id: d.id }));
+                baseDispatch({ type: 'LOAD_STATE', state: { orders } });
+            }));
+
+            unsubscribers.push(onSnapshot(collection(db, 'messages'), (snap) => {
+                const messages = snap.docs.map(d => dbToMessage({ ...d.data(), id: d.id }));
+                baseDispatch({ type: 'LOAD_STATE', state: { messages } });
+            }));
+        } else {
+            // المستخدم العادي يراقب طلباته ورسائله فقط
+            unsubscribers.push(onSnapshot(collection(db, 'orders'), (snap) => {
+                const userPhone = userData?.phone;
+                const orders = snap.docs
+                    .map(d => dbToOrder({ ...d.data(), id: d.id }))
+                    .filter(o => o.userId === user.uid || (userPhone && o.customerPhone === userPhone));
+                baseDispatch({ type: 'LOAD_STATE', state: { orders } });
+            }));
+
+            unsubscribers.push(onSnapshot(collection(db, 'messages'), (snap) => {
+                const userPhone = userData?.phone;
+                const messages = snap.docs
+                    .map(d => dbToMessage({ ...d.data(), id: d.id }))
+                    .filter(m => m.userId === user.uid || (userPhone && m.senderPhone === userPhone));
+                baseDispatch({ type: 'LOAD_STATE', state: { messages } });
+            }));
+        }
+
+        return () => {
+            unsubscribers.forEach(unsub => unsub());
+        };
+    }, [user?.uid, isAdmin, userData?.phone]);
 
     // ✅ تحميل الكاش المحلي فوراً عند فتح التطبيق
     function loadCachedDataFirst() {
