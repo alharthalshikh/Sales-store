@@ -1516,7 +1516,7 @@ export default function AdminPage() {
                             <button className="nav-icon-btn" onClick={() => setShowProductModal(false)}><X size={20} /></button>
                         </div>
                         <div className="modal-body">
-                            <div className="responsive-grid grid-cols-2">
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>اسم المنتج *</label>
                                     <input value={productForm.name || ''} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))}
