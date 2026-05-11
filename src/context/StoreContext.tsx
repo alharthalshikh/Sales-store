@@ -651,6 +651,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             }));
         }
 
+        // 🟢 مزامنة المفضلة في الوقت الفعلي
+        unsubscribers.push(onSnapshot(query(collection(db, 'user_favorites'), where('user_id', '==', user.uid)), (snap) => {
+            const cloudFavs = snap.docs.map(d => d.data().product_id);
+            // تحديث الذاكرة الاحتياطية لمنع حلقة تكرار (Loop)
+            prevFavs.current = cloudFavs;
+            baseDispatch({ type: 'LOAD_STATE', state: { favorites: cloudFavs } });
+        }));
+
+        // 🟢 مزامنة السلة في الوقت الفعلي
+        unsubscribers.push(onSnapshot(query(collection(db, 'user_cart'), where('user_id', '==', user.uid)), (snap) => {
+            const cloudCart = snap.docs.map(d => {
+                const data = d.data();
+                // نستخدم state.products الحالية أو defaultProducts إذا لم تكتمل
+                const product = state.products.find(p => p.id === data.product_id);
+                return product ? { product, quantity: data.quantity } : null;
+            }).filter(Boolean) as CartItem[];
+            
+            prevCart.current = cloudCart;
+            baseDispatch({ type: 'LOAD_STATE', state: { cart: cloudCart } });
+        }));
+
         return () => {
             unsubscribers.forEach(unsub => unsub());
         };
