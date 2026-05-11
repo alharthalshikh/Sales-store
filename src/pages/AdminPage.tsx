@@ -460,6 +460,111 @@ export default function AdminPage() {
             return qty > 0 && qty <= threshold;
         });
 
+        // عرض نموذج المنتج داخل الصفحة مباشرة (بدون Modal)
+        if (showProductModal) {
+            return (
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                        <h3>{editingProductId ? '✏️ تعديل المنتج' : '➕ إضافة منتج جديد'}</h3>
+                        <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}><X size={16} /> رجوع</button>
+                    </div>
+                    <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 20, border: '1px solid var(--border)', display: 'grid', gap: 16 }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>اسم المنتج *</label>
+                            <input value={productForm.name || ''} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))}
+                                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>اسم بالإنجليزية</label>
+                            <input value={productForm.nameEn || ''} onChange={e => setProductForm(p => ({ ...p, nameEn: e.target.value }))}
+                                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>السعر *</label>
+                                <input type="number" value={productForm.price || ''} onChange={e => setProductForm(p => ({ ...p, price: Number(e.target.value) }))}
+                                    style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>السعر قبل الخصم</label>
+                                <input type="number" value={productForm.originalPrice || ''} onChange={e => setProductForm(p => ({ ...p, originalPrice: Number(e.target.value) || undefined }))}
+                                    style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
+                            </div>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الصورة الرئيسية *</label>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <input value={productForm.image || ''} onChange={e => setProductForm(p => ({ ...p, image: e.target.value }))} placeholder="رابط الصورة"
+                                    style={{ flex: 1, minWidth: 180, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
+                                <label style={{ cursor: uploading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: '12px 16px', background: 'var(--accent)', color: '#000', borderRadius: 10, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', opacity: uploading ? 0.6 : 1 }}>
+                                    {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
+                                    {uploading ? 'جاري...' : '📸 رفع'}
+                                    <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading} onChange={async (e) => {
+                                        const file = e.target.files?.[0]; if (!file) return;
+                                        setUploading(true);
+                                        const url = await Promise.race([uploadImage(file, 'products'), new Promise<null>(r => setTimeout(() => r(null), 30000))]);
+                                        setUploading(false);
+                                        if (url) { setProductForm(p => ({ ...p, image: url })); showToast('تم رفع الصورة 📸'); }
+                                        else showToast('فشل الرفع', 'error');
+                                        e.target.value = '';
+                                    }} />
+                                </label>
+                            </div>
+                            {productForm.image && <img src={productForm.image} alt="" style={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 8, marginTop: 8, border: '1px solid var(--border)' }} />}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>القسم *</label>
+                                <select value={productForm.categoryId || ''} onChange={e => setProductForm(p => ({ ...p, categoryId: e.target.value }))}
+                                    style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }}>
+                                    <option value="">اختر القسم</option>
+                                    {state.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الوزن</label>
+                                <input value={productForm.weight || ''} onChange={e => setProductForm(p => ({ ...p, weight: e.target.value }))}
+                                    style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
+                            </div>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الوصف</label>
+                            <textarea value={productForm.description || ''} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} rows={3}
+                                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', resize: 'vertical', fontSize: '1rem' }} />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>كلمات مفتاحية</label>
+                            <input value={tagsInput} onChange={e => setTagsInput(e.target.value)} placeholder="عسل, طبيعي, سدر"
+                                style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '1rem' }} />
+                        </div>
+                        <div style={{ background: 'var(--bg)', borderRadius: 12, padding: 16, border: '1px solid var(--border)' }}>
+                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: 12, color: 'var(--accent)' }}>📦 إدارة المخزون</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>الكمية *</label>
+                                    <input type="number" min="0" value={productForm.stockQuantity ?? 0} onChange={e => setProductForm(p => ({ ...p, stockQuantity: Math.max(0, Number(e.target.value)) }))}
+                                        style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>حد التنبيه</label>
+                                    <input type="number" min="1" value={productForm.lowStockThreshold ?? 5} onChange={e => setProductForm(p => ({ ...p, lowStockThreshold: Math.max(1, Number(e.target.value)) }))}
+                                        style={{ width: '100%', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)' }} />
+                                </div>
+                            </div>
+                        </div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                            <input type="checkbox" checked={productForm.featured ?? false} onChange={e => setProductForm(p => ({ ...p, featured: e.target.checked }))} />
+                            ⭐ منتج مميز
+                        </label>
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                            <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>إلغاء</button>
+                            <button className="btn btn-primary" onClick={saveProduct}><Save size={16} /> {editingProductId ? 'تحديث' : 'إضافة'}</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div>
                 {/* تنبيهات المخزون */}
@@ -1509,83 +1614,6 @@ export default function AdminPage() {
 
         {/* ================== MODALS ================== */}
 
-            {/* Product Modal */}
-            {showProductModal && (
-                <div className="modal-overlay" onClick={() => setShowProductModal(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2>{editingProductId ? '✏️ تعديل المنتج' : '➕ إضافة منتج جديد'}</h2>
-                            <button className="nav-icon-btn" onClick={() => setShowProductModal(false)}><X size={20} /></button>
-                        </div>
-                        <div className="modal-body">
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>اسم المنتج *</label>
-                                    <input value={productForm.name || ''} onChange={e => setProductForm(p => ({ ...p, name: e.target.value }))}
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>اسم بالإنجليزية</label>
-                                    <input value={productForm.nameEn || ''} onChange={e => setProductForm(p => ({ ...p, nameEn: e.target.value }))}
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>السعر *</label>
-                                    <input type="number" value={productForm.price || ''} onChange={e => setProductForm(p => ({ ...p, price: Number(e.target.value) }))}
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>السعر الأصلي (قبل الخصم)</label>
-                                    <input type="number" value={productForm.originalPrice || ''} onChange={e => setProductForm(p => ({ ...p, originalPrice: Number(e.target.value) || undefined }))}
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                </div>
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الصورة الرئيسية *</label>
-                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                        <input value={productForm.image || ''} onChange={e => setProductForm(p => ({ ...p, image: e.target.value }))} placeholder="رابط الصورة أو ارفع من جهازك"
-                                            style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                        <label style={{ cursor: uploading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: 'var(--accent)', color: '#fff', borderRadius: 10, fontWeight: 600, fontSize: '0.85rem', whiteSpace: 'nowrap', opacity: uploading ? 0.6 : 1 }}>
-                                            {uploading ? <Loader2 size={16} className="spin" /> : <Upload size={16} />}
-                                            {uploading ? 'جاري الرفع...' : '📸 رفع صورة'}
-                                            <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading} onChange={async (e) => {
-                                                const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                setUploading(true);
-                                                const uploadTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 30000));
-                                                const url = await Promise.race([uploadImage(file, 'products'), uploadTimeout]);
-                                                setUploading(false);
-                                                if (url) { setProductForm(p => ({ ...p, image: url })); showToast('تم رفع الصورة بنجاح 📸'); }
-                                                else showToast('فشل رفع الصورة أو انتهت المهلة', 'error');
-                                                e.target.value = '';
-                                            }} />
-                                        </label>
-                                    </div>
-                                    {productForm.image && (
-                                        <div style={{ marginTop: 10 }}>
-                                            <img src={productForm.image} alt="معاينة" style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>القسم *</label>
-                                    <select value={productForm.categoryId || ''} onChange={e => setProductForm(p => ({ ...p, categoryId: e.target.value }))}
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }}>
-                                        <option value="">اختر القسم</option>
-                                        {state.categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الوزن</label>
-                                    <input value={productForm.weight || ''} onChange={e => setProductForm(p => ({ ...p, weight: e.target.value }))}
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                </div>
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الوصف</label>
-                                    <textarea value={productForm.description || ''} onChange={e => setProductForm(p => ({ ...p, description: e.target.value }))} rows={3}
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', resize: 'vertical' }} />
-                                </div>
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: 6 }}>الكلمات المفتاحية (فاصلة بين كل كلمة)</label>
                                     <input value={tagsInput} onChange={e => setTagsInput(e.target.value)} placeholder="عسل, طبيعي, سدر"
                                         style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
                                 </div>
