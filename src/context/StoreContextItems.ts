@@ -302,21 +302,23 @@ export function dbToMessage(row: any): Message {
         orderId: row.order_id,
         read: row.status === 'read' || row.status === 'replied',
         status: row.status || 'unread',
-        createdAt: new Date(row.created_at).getTime()
+        createdAt: new Date(row.created_at).getTime(),
+        deletedByUser: row.deleted_by_user || false
     };
 }
 
 export function messageToDb(m: Message) {
     return {
         id: m.id,
-        user_id: m.userId,
+        user_id: m.userId || null,
         name: m.senderName,
-        contact_info: m.senderPhone,
+        contact_info: m.senderPhone || '',
         content: m.content,
         is_from_admin: m.isFromAdmin,
-        order_id: m.orderId,
+        order_id: m.orderId || null,
         status: m.status,
-        created_at: new Date(m.createdAt).toISOString()
+        created_at: new Date(m.createdAt).toISOString(),
+        deleted_by_user: m.deletedByUser || false
     };
 }
 

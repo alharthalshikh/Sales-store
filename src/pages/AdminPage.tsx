@@ -864,12 +864,17 @@ export default function AdminPage() {
         // Group messages by phone
         const grouped: Record<string, typeof state.messages> = {};
         state.messages.forEach(m => {
-            const key = m.senderPhone || m.userId || 'unknown';
+            // نستخدم رقم الهاتف كمعرف أساسي، وإذا لم يوجد نستخدم الاسم، وإذا لم يوجد نستخدم المعرف الرقمي
+            const key = m.senderPhone || m.senderName || m.userId || 'unknown';
             if (!grouped[key]) grouped[key] = [];
             grouped[key].push(m);
         });
 
-        const phones = Object.keys(grouped);
+        const phones = Object.keys(grouped).sort((a, b) => {
+            const lastA = [...grouped[a]].sort((x, y) => x.createdAt - y.createdAt).pop()?.createdAt || 0;
+            const lastB = [...grouped[b]].sort((x, y) => x.createdAt - y.createdAt).pop()?.createdAt || 0;
+            return lastB - lastA;
+        });
         const activeChat = selectedChatPhone
             ? [...grouped[selectedChatPhone]].sort((a, b) => a.createdAt - b.createdAt)
             : null;
@@ -878,6 +883,26 @@ export default function AdminPage() {
             <div>
                 <div className="admin-section-header">
                     <h3>💬 المحادثات ({phones.length})</h3>
+                    <button 
+                        onClick={async () => {
+                            const { collection, getDocs } = await import('firebase/firestore');
+                            const { db } = await import('../lib/firebase');
+                            const { dbToMessage } = await import('../context/StoreContextItems');
+                            try {
+                                showToast('جاري الفحص العميق للقاعدة...');
+                                const snap = await getDocs(collection(db, 'messages'));
+                                const messages = snap.docs.map(d => dbToMessage({ ...d.data(), id: d.id }));
+                                dispatch({ type: 'LOAD_STATE', state: { messages } });
+                                showToast(`نجاح! تم جلب ${messages.length} رسالة من السحاب ☁️`);
+                            } catch (err: any) {
+                                console.error('Manual Check Failed:', err);
+                                showToast(`فشل الفحص: ${err.code || err.message}`);
+                            }
+                        }}
+                        style={{ padding: '8px 16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.8rem' }}
+                    >
+                        🔄 فحص ومزامنة فورية
+                    </button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: activeChat ? '280px 1fr' : '1fr', gap: 16, minHeight: 400 }}>
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
@@ -902,7 +927,7 @@ export default function AdminPage() {
                     {activeChat && (
                         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, display: 'flex', flexDirection: 'column' }}>
                             <div style={{ padding: 16, borderBottom: '1px solid var(--border)', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>{activeChat[0]?.senderName} — {selectedChatPhone}</div>
+                                <div>{activeChat[0]?.senderName} {selectedChatPhone && selectedChatPhone.length < 20 ? ` — ${selectedChatPhone}` : ''}</div>
                                 <button
                                     className="btn btn-danger btn-small"
                                     title="حذف المحادثة بالكامل"
@@ -941,12 +966,12 @@ export default function AdminPage() {
 
     const sendReply = () => {
         if (!replyText.trim() || !selectedChatPhone) return;
-        const msgs = state.messages.filter(m => (m.senderPhone || m.userId) === selectedChatPhone);
+        const msgs = state.messages.filter(m => (m.senderPhone || m.senderName || m.userId) === selectedChatPhone);
         const original = msgs[0];
         dispatch({
             type: 'ADD_MESSAGE',
             message: {
-                id: `MSG - ${Date.now()} `,
+                id: `MSG-${Date.now()}`,
                 userId: original?.userId,
                 senderName: 'المتجر',
                 senderPhone: selectedChatPhone,

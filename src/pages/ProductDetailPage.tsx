@@ -339,22 +339,31 @@ export default function ProductDetailPage() {
 
                         {product.videoUrl && (
                             <div style={{ marginTop: '20px' }}>
+                                <style>{`
+                                    @keyframes pulse-video {
+                                        0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+                                        70% { box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); }
+                                        100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
+                                    }
+                                `}</style>
                                 <button
                                     onClick={() => setShowVideo(true)}
-                                    className="btn btn-secondary"
                                     style={{
                                         width: '100%',
                                         padding: '16px',
                                         borderRadius: '16px',
                                         background: 'rgba(197, 160, 89, 0.1)',
-                                        border: '1px solid var(--accent)',
+                                        border: '1.5px solid var(--accent)',
                                         color: 'var(--accent)',
-                                        fontWeight: 700,
+                                        fontWeight: 800,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        gap: '10px',
-                                        transition: '0.3s'
+                                        gap: '12px',
+                                        transition: '0.3s',
+                                        animation: 'pulse-video 2s infinite',
+                                        cursor: 'pointer',
+                                        fontSize: '1rem'
                                     }}
                                     onMouseEnter={(e) => {
                                         (e.currentTarget as HTMLElement).style.background = 'var(--accent)';
@@ -365,8 +374,14 @@ export default function ProductDetailPage() {
                                         (e.currentTarget as HTMLElement).style.color = 'var(--accent)';
                                     }}
                                 >
-                                    <Send size={20} style={{ transform: 'rotate(-45deg)' }} />
-                                    🎬 استعراض المنتج بالفيديو
+                                    <div style={{
+                                        width: '28px', height: '28px', borderRadius: '50%',
+                                        background: 'currentColor', display: 'flex', alignItems: 'center',
+                                        justifyContent: 'center', color: '#fff'
+                                    }}>
+                                        <div style={{ width: 0, height: 0, borderLeft: '8px solid currentColor', borderTop: '5px solid transparent', borderBottom: '5px solid transparent', marginLeft: '3px' }} />
+                                    </div>
+                                    مشاهدة طريقة استخدام المنتج
                                 </button>
                             </div>
                         )}

@@ -74,6 +74,7 @@ export interface Message {
     createdAt: number;
     read: boolean;
     status: 'unread' | 'read' | 'replied';
+    deletedByUser?: boolean;
 }
 
 export interface DiscountRule {

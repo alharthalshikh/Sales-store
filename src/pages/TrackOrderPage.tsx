@@ -342,6 +342,28 @@ export default function TrackOrderPage() {
                                                 )}
 
 
+                                                {/* 💬 زر المراسلة حول الطلب */}
+                                                <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
+                                                    <button 
+                                                        className="btn btn-secondary"
+                                                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px' }}
+                                                        onClick={() => {
+                                                            navigate(`/messages?orderId=${order.id}`);
+                                                        }}
+                                                    >
+                                                        💬 استفسار عن الطلب
+                                                    </button>
+                                                    <button 
+                                                        className="btn btn-outline"
+                                                        style={{ flex: 1, padding: '10px', borderColor: 'rgba(255,255,255,0.1)' }}
+                                                        onClick={() => {
+                                                            const text = `السلام عليكم، أود الاستفسار عن طلبي رقم ${formatOrderId(order.id)}`;
+                                                            window.open(`https://wa.me/${s.whatsappNumber}?text=${encodeURIComponent(text)}`, '_blank');
+                                                        }}
+                                                    >
+                                                        📱 واتساب
+                                                    </button>
+                                                </div>
                                             </div>
                                         );
                                     })}

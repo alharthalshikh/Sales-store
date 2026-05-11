@@ -3,6 +3,7 @@ import { Send } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
 import ConfirmModal from '../components/ConfirmModal';
+import { showToast } from '../components/ToastContainer';
 
 export default function MessagesPage() {
     const { state, dispatch } = useStore();
@@ -39,26 +40,40 @@ export default function MessagesPage() {
             localStorage.setItem('chat-sender-name', senderName);
             localStorage.setItem('chat-sender-phone', senderPhone);
             setStarted(true);
+            showToast('أهلاً بك في المحادثة 👋');
         }
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!newMessage.trim() || !senderName.trim()) return;
-        dispatch({
-            type: 'ADD_MESSAGE',
-            message: {
-                id: `MSG-${Date.now()}`,
-                userId: user?.uid,
-                senderName,
-                senderPhone,
-                content: newMessage,
-                isFromAdmin: false,
-                createdAt: Date.now(),
-                read: false,
-                status: 'unread'
-            },
-        });
+        const msgId = `MSG-${Date.now()}`;
+        const messageData: any = {
+            id: msgId,
+            userId: user?.uid || null,
+            senderName,
+            senderPhone,
+            content: newMessage,
+            isFromAdmin: false,
+            createdAt: Date.now(),
+            read: false,
+            status: 'unread' as const
+        };
+
+        // عرض الرسالة محلياً فوراً
+        dispatch({ type: 'ADD_MESSAGE', message: messageData });
         setNewMessage('');
+
+        // حفظ في Firestore مباشرة (بدون الاعتماد على dispatch فقط)
+        try {
+            const { doc, setDoc } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            const { messageToDb } = await import('../context/StoreContextItems');
+            await setDoc(doc(db, 'messages', msgId), messageToDb(messageData));
+            showToast('تم إرسال رسالتك بنجاح ✅');
+        } catch (err: any) {
+            console.error('❌ Firestore Write Error:', err);
+            showToast(`⚠️ فشل حفظ الرسالة: ${err.code || err.message}`);
+        }
     };
 
     const formatDate = (timestamp: number) => {
@@ -117,6 +132,20 @@ export default function MessagesPage() {
                     ) : (
                         <>
                             <div className="chat-messages">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <h3 style={{ margin: 0 }}>💬 المحادثة</h3>
+                                    <button 
+                                        className="btn btn-danger btn-small" 
+                                        style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                                        onClick={() => {
+                                            if (window.confirm('هل أنت متأكد من مسح المحادثة من عندك؟ ستبقى نسخة لدى الإدارة للمراجعة.')) {
+                                                dispatch({ type: 'CLEAR_USER_MESSAGES', userId: user?.uid, phone: senderPhone });
+                                            }
+                                        }}
+                                    >
+                                        🗑️ مسح المحادثة
+                                    </button>
+                                </div>
                                 {userMessages.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-light)' }}>
                                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💬</div>

@@ -70,31 +70,34 @@ export default function ProductsPage() {
                     <p>تصفح منتجاتنا المميزة واختر ما يناسبك</p>
                 </div>
                 <div className="filter-bar">
-                    <button className={`filter-btn ${activeCategory === 'all' ? 'active' : ''}`} onClick={() => setSearchParams({})}>
+                    <button className={`filter-btn ${activeCategory === 'all' ? 'active' : ''}`} onClick={() => { setSearchParams({}); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                         الكل ({state.products.length})
                     </button>
                     {state.categories.map(cat => {
                         const catIdStr = String(cat.id).trim();
                         const count = state.products.filter(p => String(p.categoryId || '').trim() === catIdStr).length;
                         return (
-                            <button key={cat.id} className={`filter-btn ${String(activeCategory).trim() === catIdStr ? 'active' : ''}`} onClick={() => setSearchParams({ category: cat.id })}>
+                            <button key={cat.id} className={`filter-btn ${String(activeCategory).trim() === catIdStr ? 'active' : ''}`} onClick={() => { setSearchParams({ category: cat.id }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                                 {cat.icon} {cat.name} ({count})
                             </button>
                         );
                     })}
-                    <input type="text" className="search-input" placeholder="🔍 ابحث عن منتج..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: '10px 18px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '50px', color: 'var(--text)', fontSize: '0.9rem', cursor: 'pointer' }}>
-                        <option value="featured">المميزة أولاً</option>
-                        <option value="price-low">السعر: من الأقل</option>
-                        <option value="price-high">السعر: من الأعلى</option>
-                        <option value="rating">الأعلى تقييماً</option>
+                    <div className="search-input-wrapper">
+                        <input type="text" className="search-input" placeholder="ابحث عن منتج..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                        <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
+                    </div>
+                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="sort-select">
+                        <option value="featured">✨ المميزة</option>
+                        <option value="price-low">💰 الأقل سعراً</option>
+                        <option value="price-high">📈 الأعلى سعراً</option>
+                        <option value="rating">⭐ التقييم</option>
                     </select>
                 </div>
                 {filteredProducts.length === 0 ? (
                     <div className="favorites-empty">
                         <div className="favorites-empty-icon">🔍</div>
-                        <h3>لا توجد منتجات</h3>
-                        <p>جرب تغيير الفلتر أو البحث بكلمة أخرى</p>
+                        <h3>لا توجد نتائج بحث</h3>
+                        <p>جرب كلمات أخرى أو تصفح الأقسام</p>
                     </div>
                 ) : (
                     <div className="products-grid" style={{ paddingBottom: '60px' }}>

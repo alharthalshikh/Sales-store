@@ -81,13 +81,22 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
             return { ...state, orders: state.orders.map(o => o.id === action.orderId ? { ...o, status: action.status } : o) };
         case 'DELETE_ORDER':
             return { ...state, orders: state.orders.filter(o => o.id !== action.orderId) };
-        case 'ADD_MESSAGE':
+        case 'ADD_MESSAGE': {
             if (state.messages.find(m => m.id === action.message.id)) return state;
-            return { ...state, messages: [action.message, ...state.messages] };
-        case 'MARK_MESSAGE_READ':
-            return { ...state, messages: state.messages.map(m => m.id === action.messageId ? { ...m, read: true, status: 'read' } : m) };
-        case 'DELETE_MESSAGE':
-            return { ...state, messages: state.messages.filter(m => m.id !== action.messageId) };
+            const updatedMessages = [action.message, ...state.messages];
+            localStorage.setItem('cached-messages', JSON.stringify(updatedMessages.slice(0, 50)));
+            return { ...state, messages: updatedMessages };
+        }
+        case 'MARK_MESSAGE_READ': {
+            const updatedMessages = state.messages.map(m => m.id === action.messageId ? { ...m, read: true, status: 'read' as const } : m);
+            localStorage.setItem('cached-messages', JSON.stringify(updatedMessages.slice(0, 50)));
+            return { ...state, messages: updatedMessages };
+        }
+        case 'DELETE_MESSAGE': {
+            const updatedMessages = state.messages.filter(m => m.id !== action.messageId);
+            localStorage.setItem('cached-messages', JSON.stringify(updatedMessages.slice(0, 50)));
+            return { ...state, messages: updatedMessages };
+        }
         case 'CLEAR_USER_MESSAGES':
             return {
                 ...state,
@@ -194,18 +203,32 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
                 unreadFavoritesCount: 0
             };
         case 'LOAD_STATE': {
-            // console.log('🔄 REDUCER: LOAD_STATE', Object.keys(action.state));
-
-            return {
+            const newState = {
                 ...state,
-                // ندمج كل البيانات القادمة بشرط ألا تكون undefined
                 ...Object.fromEntries(
                     Object.entries(action.state).filter(([_, v]) => v !== undefined)
                 ),
-                // تأكيد تحديث الإعدادات إذا وجدت
                 settings: action.state.settings || state.settings,
                 isDataInitialized: action.state.isDataInitialized ?? state.isDataInitialized
             };
+
+            // 🧠 دمج الرسائل بذكاء: الحفاظ على الرسائل المحلية التي لم تُرفع بعد
+            if (action.state.messages) {
+                const incomingIds = new Set(action.state.messages.map((m: any) => m.id));
+                const localOnly = state.messages.filter(m => !incomingIds.has(m.id));
+                newState.messages = [...action.state.messages, ...localOnly].sort((a, b) => b.createdAt - a.createdAt);
+            }
+
+            // 🧠 دمج الطلبات بذكاء: الحفاظ على الطلبات المحلية
+            if (action.state.orders) {
+                const incomingOrderIds = new Set(action.state.orders.map((o: any) => o.id));
+                const localOrdersOnly = state.orders.filter(o => !incomingOrderIds.has(o.id));
+                newState.orders = [...action.state.orders, ...localOrdersOnly].sort((a, b) => b.createdAt - a.createdAt);
+            }
+
+            // حفظ في localStorage للاحتياط (باستثناء البيانات الضخمة)
+            localStorage.setItem('cached-messages', JSON.stringify(newState.messages.slice(0, 50)));
+            return newState;
         }
         default:
             return state;
@@ -220,10 +243,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // ===== Dispatch مع مزامنة Firestore =====
     const dispatch = useCallback((action: StoreAction) => {
         baseDispatch(action);
-
-        // مزامنة مع Firestore في الخلفية
         syncToFirestore(action).catch(() => {});
-    }, [user]);
+    }, [state, user]);
 
     // ===== دالة مساعدة لحذف كل مستندات مجموعة =====
     async function clearCollection(colName: string) {
@@ -296,8 +317,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     await updateDoc(doc(db, 'messages', action.messageId), { status: 'read' });
                     break;
                 case 'DELETE_MESSAGE':
-                    await deleteDoc(doc(db, 'messages', action.messageId));
+                    if (isAdmin) {
+                        // المدير يحذف نهائياً من القاعدة
+                        await deleteDoc(doc(db, 'messages', action.messageId));
+                    } else {
+                        // المستخدم يخفيها من عنده فقط (تحديث حقل في القاعدة)
+                        await updateDoc(doc(db, 'messages', action.messageId), { deleted_by_user: true });
+                    }
                     break;
+                case 'CLEAR_USER_MESSAGES': {
+                    const q = action.userId 
+                        ? query(collection(db, 'messages'), where('user_id', '==', action.userId))
+                        : query(collection(db, 'messages'), where('contact_info', '==', action.phone));
+                    const snap = await getDocs(q);
+                    const batch = writeBatch(db);
+                    snap.docs.forEach(d => {
+                        if (isAdmin) {
+                            batch.delete(d.ref); // حذف نهائي للمدير
+                        } else {
+                            batch.update(d.ref, { deleted_by_user: true }); // إخفاء للمستخدم
+                        }
+                    });
+                    await batch.commit();
+                    break;
+                }
+                case 'CLEAR_MESSAGES': {
+                    if (isAdmin) await clearCollection('messages');
+                    break;
+                }
                 case 'ADD_REVIEW':
                     await setDoc(doc(db, 'reviews', action.review.id), reviewToDb(action.review));
                     break;
@@ -408,7 +455,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     localStorage.clear();
                     break;
             }
-        } catch (err) { }
+        } catch (err: any) {
+            console.error('🔥 Error syncing to Firestore:', err);
+            if (err.code === 'permission-denied') {
+                showToast('خطأ: ليس لديك صلاحية لحفظ هذه البيانات 🚫');
+            } else {
+                showToast(`خطأ في المزامنة: ${err.message || 'حدث خطأ غير معروف'}`);
+            }
+        }
     }
 
     // ===== مراقبة ومزامنة المفضلة والسلة (الحساب) =====
@@ -627,13 +681,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 const orders = snap.docs.map(d => dbToOrder({ ...d.data(), id: d.id }));
                 baseDispatch({ type: 'LOAD_STATE', state: { orders } });
             }));
-
-            unsubscribers.push(onSnapshot(collection(db, 'messages'), (snap) => {
-                const messages = snap.docs.map(d => dbToMessage({ ...d.data(), id: d.id }));
-                baseDispatch({ type: 'LOAD_STATE', state: { messages } });
-            }));
         } else {
-            // المستخدم العادي يراقب طلباته ورسائله فقط
+            // للمستخدم العادي: مراقبة طلباته فقط
             unsubscribers.push(onSnapshot(collection(db, 'orders'), (snap) => {
                 const userPhone = userData?.phone;
                 const orders = snap.docs
@@ -641,41 +690,68 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     .filter(o => o.userId === user.uid || (userPhone && o.customerPhone === userPhone));
                 baseDispatch({ type: 'LOAD_STATE', state: { orders } });
             }));
-
-            unsubscribers.push(onSnapshot(collection(db, 'messages'), (snap) => {
-                const userPhone = userData?.phone;
-                const messages = snap.docs
-                    .map(d => dbToMessage({ ...d.data(), id: d.id }))
-                    .filter(m => m.userId === user.uid || (userPhone && m.senderPhone === userPhone));
-                baseDispatch({ type: 'LOAD_STATE', state: { messages } });
-            }));
         }
 
-        // 🟢 مزامنة المفضلة في الوقت الفعلي
+        // 🟢 مراقب الرسائل الموحد (للأعضاء والزوار والأدمن)
+        // 🟢 مزامنة المفضلة والسلة
         unsubscribers.push(onSnapshot(query(collection(db, 'user_favorites'), where('user_id', '==', user.uid)), (snap) => {
             const cloudFavs = snap.docs.map(d => d.data().product_id);
-            // تحديث الذاكرة الاحتياطية لمنع حلقة تكرار (Loop)
             prevFavs.current = cloudFavs;
             baseDispatch({ type: 'LOAD_STATE', state: { favorites: cloudFavs } });
         }));
 
-        // 🟢 مزامنة السلة في الوقت الفعلي
         unsubscribers.push(onSnapshot(query(collection(db, 'user_cart'), where('user_id', '==', user.uid)), (snap) => {
             const cloudCart = snap.docs.map(d => {
                 const data = d.data();
-                // نستخدم state.products الحالية أو defaultProducts إذا لم تكتمل
                 const product = state.products.find(p => p.id === data.product_id);
                 return product ? { product, quantity: data.quantity } : null;
             }).filter(Boolean) as CartItem[];
-            
             prevCart.current = cloudCart;
             baseDispatch({ type: 'LOAD_STATE', state: { cart: cloudCart } });
         }));
 
-        return () => {
-            unsubscribers.forEach(unsub => unsub());
-        };
-    }, [user?.uid, isAdmin, userData?.phone]);
+        return () => unsubscribers.forEach(unsub => unsub());
+    }, [user?.uid, isAdmin, userData?.phone, state.products.length]);
+
+    // 🟢 مراقب الرسائل الموحد (للأعضاء والزوار والأدمن)
+    useEffect(() => {
+        // إذا لم يتم تهيئة بيانات المستخدم بعد، ننتظر قليلاً لتجنب الفلترة الخاطئة
+        const savedName = localStorage.getItem('chat-sender-name');
+        const savedPhone = localStorage.getItem('chat-sender-phone');
+
+        const unsub = onSnapshot(collection(db, 'messages'), 
+            (snap) => {
+                const currentUserId = user?.uid;
+                const currentPhone = userData?.phone || savedPhone;
+                const currentEmail = user?.email || userData?.email;
+                const currentName = userData?.name || user?.displayName || savedName;
+
+                const messages = snap.docs
+                    .map(d => dbToMessage({ ...d.data(), id: d.id }))
+                    .filter(m => {
+                        // إذا كنا أدمن، نظهر كل شيء
+                        if (isAdmin) return true;
+                        
+                        // إذا لم نكن متأكدين بعد من الحالة (قيد التحميل)، لا نحذف الرسائل من الحالة المحلية
+                        // لكن هنا سنطبق فلترة المستخدم العادي
+                        if (m.deletedByUser) return false;
+
+                        const matchesId = currentUserId && m.userId === currentUserId;
+                        const matchesPhone = currentPhone && m.senderPhone === currentPhone;
+                        const matchesEmail = (currentPhone && m.senderPhone === currentPhone) || (currentEmail && m.senderPhone === currentEmail);
+                        const matchesName = currentName && m.senderName === currentName;
+
+                        return matchesId || matchesPhone || matchesEmail || matchesName;
+                    });
+                baseDispatch({ type: 'LOAD_STATE', state: { messages } });
+            },
+            (error) => {
+                console.error('🔥 Firestore Monitor Error:', error);
+            }
+        );
+
+        return () => unsub();
+    }, [user?.uid, isAdmin, userData?.phone, userData?.name, user === undefined]);
 
     // ✅ تحميل الكاش المحلي فوراً عند فتح التطبيق
     function loadCachedDataFirst() {
@@ -699,8 +775,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     try {
                         const localCart = localStorage.getItem('store-cart');
                         const localFavs = localStorage.getItem('store-favorites');
+                        const localMessages = localStorage.getItem('cached-messages');
                         if (localCart) cachedState.cart = JSON.parse(localCart);
                         if (localFavs) cachedState.favorites = JSON.parse(localFavs);
+                        if (localMessages) cachedState.messages = JSON.parse(localMessages);
                     } catch (e) { }
                     baseDispatch({ type: 'LOAD_STATE', state: cachedState });
                 }
