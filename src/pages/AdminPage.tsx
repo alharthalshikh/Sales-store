@@ -930,7 +930,7 @@ export default function AdminPage() {
                                     onClick={() => {
                                         confirmAction('حذف المحادثة', 'هل أنت متأكد من حذف هذه المحادثة بالكامل؟ لا يمكن التراجع', () => {
                                             const original = activeChat[0];
-                                            dispatch({ type: 'CLEAR_USER_MESSAGES', userId: original.userId, phone: original.senderPhone });
+                                            dispatch({ type: 'CLEAR_USER_MESSAGES', userId: original.userId, phone: original.senderPhone, isAdmin: true });
                                             setSelectedChatPhone(null);
                                             showToast('تم حذف المحادثة بنجاح 🗑️', 'warning');
                                         });
@@ -956,7 +956,7 @@ export default function AdminPage() {
                                         <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <span>{formatDate(msg.createdAt)}</span>
                                             <button 
-                                                onClick={() => { if(window.confirm('حذف هذه الرسالة للطرفين؟')) dispatch({ type: 'DELETE_MESSAGE', messageId: msg.id }); }}
+                                                onClick={() => { if(window.confirm('حذف هذه الرسالة للطرفين؟')) dispatch({ type: 'DELETE_MESSAGE', messageId: msg.id, isAdmin: true }); }}
                                                 style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0 4px', opacity: 0.5 }}
                                                 title="حذف للطرفين"
                                             >

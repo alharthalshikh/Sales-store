@@ -257,7 +257,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // ===== المزامنة مع Firestore (البيانات العامة) =====
     async function syncToFirestore(action: StoreAction) {
         if (!user) return;
-        const isAdmin = user.email === 'alharth465117@gmail.com';
         
         try {
             switch (action.type) {
@@ -320,7 +319,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     await updateDoc(doc(db, 'messages', action.messageId), { status: 'read' });
                     break;
                 case 'DELETE_MESSAGE':
-                    if (isAdmin) {
+                    if (action.isAdmin) {
                         await deleteDoc(doc(db, 'messages', action.messageId));
                     } else {
                         await updateDoc(doc(db, 'messages', action.messageId), { deleted_by_user: true });
@@ -335,7 +334,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         const matchesPhone = (action.phone && (data.contact_info === action.phone || data.name === action.phone));
                         
                         if (matchesUser || matchesPhone) {
-                            if (isAdmin) {
+                            if (action.isAdmin) {
                                 batch.delete(d.ref); // مسح نهائي للطرفين
                             } else {
                                 batch.update(d.ref, { deleted_by_user: true }); // إخفاء للمستخدم فقط
