@@ -1,5 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
     apiKey: "AIzaSyD3mlTsZN7DXO3To8jaDrXLSxP2MXddf5g",
@@ -13,6 +15,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // 🔒 تأمين استمرار الجلسة لضمان عدم تسجيل الخروج التلقائي
 setPersistence(auth, browserLocalPersistence)

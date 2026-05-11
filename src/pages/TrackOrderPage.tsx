@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
-import { generateInvoicePDF } from '../utils/invoiceGenerator';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import { dbToOrder } from '../context/StoreContextItems';
 import { Order } from '../types';
 import { formatOrderId } from '../utils/formatOrderId';
@@ -62,28 +62,23 @@ export default function TrackOrderPage() {
 
         setLoading(true);
         setCloudOrders([]);
-        // سنقوم بتفعيل حالة البحث بعد انتهاء العملية لضمان عدم ظهور نتائج قديمة أثناء البحث
 
         try {
-            let supabaseQuery = supabase.from('orders').select('*');
+            // جلب كل الطلبات من Firestore والبحث محلياً
+            const ordersSnap = await getDocs(collection(db, 'orders'));
+            const allOrders = ordersSnap.docs.map(d => dbToOrder({ ...d.data(), id: d.id }));
 
-            if (isOrderIdQuery) {
-                // البحث عن الطلب الذي يبدأ معرفه بهذا الجزء (Case-insensitive)
-                supabaseQuery = supabaseQuery.ilike('id', `${idPart.toLowerCase()}%`);
-            } else {
-                // البحث برقم الهاتف
-                supabaseQuery = supabaseQuery.eq('customer_phone', searchQuery.trim());
-            }
+            const filtered = allOrders.filter(o => {
+                const orderIdPart = o.id.split('-')[0].toUpperCase();
+                if (isOrderIdQuery) {
+                    return orderIdPart.startsWith(idPart);
+                }
+                return o.customerPhone === searchQuery.trim();
+            });
 
-            const { data, error } = await supabaseQuery;
-            if (error) throw error;
-
-            if (data) {
-                setCloudOrders(data.map(dbToOrder));
-            }
-        } catch (err) {
-            // console.error('Track search error:', err);
-        } finally {
+            setCloudOrders(filtered);
+        } catch (err) { }
+        finally {
             setLoading(false);
             setSearched(true);
         }
@@ -336,7 +331,6 @@ export default function TrackOrderPage() {
                                                     ))}
                                                 </div>
 
-                                                {/* نقاط الولاء المكتسبة */}
                                                 {/* نقاط الولاء المكتسبة - تظهر فقط بعد التوصيل */}
                                                 {(order.loyaltyPointsEarned ?? 0) > 0 && order.status === 'delivered' && (
                                                     <div style={{

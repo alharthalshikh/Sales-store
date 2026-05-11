@@ -1,32 +1,44 @@
-import { supabase } from '@/lib/supabase';
-import bcrypt from 'bcryptjs';
+import { db } from '@/lib/firebase';
+import {
+    collection,
+    getDocs,
+    doc,
+    updateDoc,
+    deleteDoc,
+    query,
+    orderBy,
+    where,
+    QueryConstraint
+} from 'firebase/firestore';
 
-// ========== جلب كافة المستخدمين (المصدر الموحد: جدول users) ==========
+const USERS_COLLECTION = 'users';
+
+// ========== جلب كافة المستخدمين (المصدر الموحد: Firestore) ==========
 export async function getUsers(filters: { role?: string, searchQuery?: string, limit?: number, offset?: number }) {
     const role = filters.role !== 'all' ? filters.role : undefined;
     const search = filters.searchQuery || '';
-    const limit = filters.limit || 100; // زدنا الحد لنضمن رؤية الجميع
+    const limit = filters.limit || 100;
     const offset = filters.offset || 0;
 
     try {
-        // الاستعلام من جدول واحد فقط وهو users
-        let query = supabase.from('users').select('*');
+        const constraints: QueryConstraint[] = [orderBy('created_at', 'desc')];
 
-        if (role) query = query.eq('role', role);
-
-        const { data, error } = await query.order('created_at', { ascending: false });
-
-        if (error) {
-            // console.error('❌ Error fetching from users table:', error.message);
-            return [];
+        if (role) {
+            constraints.unshift(where('role', '==', role));
         }
 
-        let allUsers = data || [];
+        const q = query(collection(db, USERS_COLLECTION), ...constraints);
+        const snapshot = await getDocs(q);
+
+        let allUsers = snapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            ...docSnap.data()
+        }));
 
         // تطبيق البحث برمجياً
         if (search) {
             const s = search.toLowerCase();
-            allUsers = allUsers.filter(u =>
+            allUsers = allUsers.filter((u: any) =>
                 u.name?.toLowerCase().includes(s) ||
                 u.email?.toLowerCase().includes(s) ||
                 u.phone?.includes(s)
@@ -35,7 +47,7 @@ export async function getUsers(filters: { role?: string, searchQuery?: string, l
 
         return allUsers.slice(offset, offset + limit);
     } catch (e) {
-        // console.error('❌ Unexpected error in getUsers:', e);
+        console.error('❌ Error fetching users from Firestore:', e);
         return [];
     }
 }
@@ -50,51 +62,66 @@ export async function updateUser(userId: string, data: any) {
         updated_at: new Date().toISOString()
     };
 
-    if (data.password && data.password.trim() !== '') {
-        const salt = await bcrypt.genSalt(10);
-        updateData.password_hash = await bcrypt.hash(data.password, salt);
-    }
+    // إزالة حقول undefined
+    Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) delete updateData[key];
+    });
 
-    // تحديث في سجل واحد فقط
-    const { error } = await supabase.from('users').update(updateData).eq('id', userId);
-    if (error) throw error;
+    const userRef = doc(db, USERS_COLLECTION, userId);
+    await updateDoc(userRef, updateData);
 
     return true;
 }
 
 // ========== تفعيل/تعطيل الحساب ==========
 export async function toggleUserStatus(userId: string, isActive: boolean) {
-    const { error } = await supabase.from('users').update({ is_active: !isActive }).eq('id', userId);
-    return !error;
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        await updateDoc(userRef, { is_active: !isActive });
+        return true;
+    } catch (e) {
+        console.error('❌ Error toggling user status:', e);
+        return false;
+    }
 }
 
 // ========== حظر المستخدم ==========
 export async function toggleUserSuspension(userId: string, isSuspended: boolean) {
-    const { error } = await supabase.from('users').update({ is_suspended: !isSuspended }).eq('id', userId);
-    return !error;
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        await updateDoc(userRef, { is_suspended: !isSuspended });
+        return true;
+    } catch (e) {
+        console.error('❌ Error toggling suspension:', e);
+        return false;
+    }
 }
 
 // ========== حذف المستخدم نهائياً ==========
 export async function deleteUser(userId: string) {
-    const { error } = await supabase.from('users').delete().eq('id', userId);
-    return !error;
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        await deleteDoc(userRef);
+        return true;
+    } catch (e) {
+        console.error('❌ Error deleting user:', e);
+        return false;
+    }
 }
 
 // ========== إحصائيات لوحة التحكم الشاملة ==========
 export async function getUsersStats() {
     try {
-        const { data: users, error } = await supabase.from('users').select('role, is_active');
-        if (error) throw error;
-
-        const userData = users || [];
+        const snapshot = await getDocs(collection(db, USERS_COLLECTION));
+        const userData = snapshot.docs.map(d => d.data());
 
         return {
             total: userData.length,
-            active: userData.filter(u => u.is_active).length,
-            admins: userData.filter(u => u.role === 'admin' || u.role === 'moderator').length
+            active: userData.filter((u: any) => u.is_active).length,
+            admins: userData.filter((u: any) => u.role === 'admin' || u.role === 'moderator').length
         };
     } catch (e) {
-        // console.error('❌ Error in getUsersStats:', e);
+        console.error('❌ Error in getUsersStats:', e);
         return { total: 0, active: 0, admins: 0 };
     }
 }

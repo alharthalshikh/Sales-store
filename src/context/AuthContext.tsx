@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import {
     onAuthStateChanged,
     signInWithEmailAndPassword,
@@ -11,6 +10,7 @@ import {
     GoogleAuthProvider,
     User as FirebaseUser
 } from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 interface AuthContextType {
     isAdmin: boolean;
@@ -162,12 +162,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch (e) { }
 
             // 4. الحفظ النهائي (Update and Confirm)
-            const { error: updateError } = await supabase.from('users').update({
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, {
                 device_info: deviceInfo,
                 last_location: lastLocation,
                 last_login: new Date().toISOString(),
                 updated_at: new Date().toISOString()
-            }).eq('id', userId);
+            });
 
             // if (updateError) {
             //     console.warn("⚠️ فشل في تحديث البصمة الرقمية:", updateError.message);
@@ -197,38 +198,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            // محاولة جلب البيانات من جدول users
-            let { data: userData } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
+            // محاولة جلب البيانات من Firestore
+            const userRef = doc(db, 'users', userId);
+            const userSnap = await getDoc(userRef);
+            let userData: any = userSnap.exists() ? { id: userSnap.id, ...userSnap.data() } : null;
 
-            // إذا لم يكن موجوداً في جدول users، ننشئ له سجلاً
+            // إذا لم يكن موجوداً في Firestore، ننشئ له سجلاً
             if (!userData) {
                 // console.log("🆕 إنشاء ملف شخصي جديد للمستخدم...");
                 const newRole = isMasterAdmin ? 'admin' : 'customer';
-                const { data: newProfile } = await supabase.from('users').upsert({
-                    id: userId,
+                const newProfile = {
                     email: email,
                     name: isMasterAdmin ? 'الحارث الشيخ' : 'مستخدم جديد',
                     phone: '',
                     role: newRole,
                     is_active: true,
-                    is_suspended: false
-                }, { onConflict: 'id' }).select().single();
-                userData = newProfile;
+                    is_suspended: false,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                await setDoc(userRef, newProfile);
+                userData = { id: userId, ...newProfile };
             }
 
             // تأمين المدير العام: إذا كان الإيميل هو إيميل المدير ولكن الرتبة أو الاسم غير صحيحين
             if (isMasterAdmin && userData && (userData.role !== 'admin' || !userData.name || userData.name === email.split('@')[0])) {
                 // console.log("🔧 تصحيح بيانات المدير العام...");
-                await supabase.from('users').update({
+                const userRefFix = doc(db, 'users', userId);
+                await updateDoc(userRefFix, {
                     role: 'admin',
                     name: 'الحارث الشيخ',
                     is_active: true,
                     is_suspended: false
-                }).eq('id', userId);
+                });
                 userData.role = 'admin';
                 userData.name = 'الحارث الشيخ';
                 setAdminName('الحارث الشيخ');
@@ -275,8 +277,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const refreshUserData = async () => {
         if (!user) return;
-        const { data } = await supabase.from('users').select('*').eq('id', user.uid).single();
-        if (data) setUserData(data);
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) setUserData({ id: userSnap.id, ...userSnap.data() });
     };
 
     useEffect(() => {
@@ -285,35 +288,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (isMounted) setLoading(false);
         }, 5000);
 
-        let profileSubscription: any = null;
+        let profileUnsubscribe: (() => void) | null = null;
 
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             if (!isMounted) return;
 
-            if (profileSubscription) {
-                supabase.removeChannel(profileSubscription);
-                profileSubscription = null;
+            if (profileUnsubscribe) {
+                profileUnsubscribe();
+                profileUnsubscribe = null;
             }
 
             if (firebaseUser) {
                 setUser(firebaseUser);
                 await checkAdmin(firebaseUser.uid, firebaseUser.email || '');
 
-                profileSubscription = supabase
-                    .channel(`profile-${firebaseUser.uid}`)
-                    .on('postgres_changes', {
-                        event: 'UPDATE',
-                        schema: 'public',
-                        table: 'users',
-                        filter: `id=eq.${firebaseUser.uid}`
-                    }, (payload) => {
-                        if (payload.new && (payload.new as any).is_suspended) {
+                // مراقبة تغييرات الحظر في الوقت الفعلي عبر Firestore
+                const userRef = doc(db, 'users', firebaseUser.uid);
+                profileUnsubscribe = onSnapshot(userRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.data();
+                        if (data.is_suspended) {
                             setIsBanned(true);
-                        } else if (payload.new && !(payload.new as any).is_suspended) {
+                        } else {
                             setIsBanned(false);
                         }
-                    })
-                    .subscribe();
+                    }
+                });
             } else {
                 setUser(null);
                 setIsAdmin(false);
@@ -327,7 +327,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => {
             isMounted = false;
             unsubscribe();
-            if (profileSubscription) supabase.removeChannel(profileSubscription);
+            if (profileUnsubscribe) profileUnsubscribe();
             clearTimeout(timeout);
         };
     }, []);
@@ -378,15 +378,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
             if (userCredential.user) {
-                await supabase.from('users').upsert({
-                    id: userCredential.user.uid,
+                const userRef = doc(db, 'users', userCredential.user.uid);
+                await setDoc(userRef, {
                     email: email,
                     name: metadata.name,
                     phone: metadata.phone || '',
                     role: 'customer',
                     is_active: true,
-                    is_suspended: false
-                }, { onConflict: 'id' });
+                    is_suspended: false,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
                 return { success: true };
             }
 

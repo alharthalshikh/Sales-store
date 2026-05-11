@@ -1,10 +1,9 @@
 // ============================================================
-// 📸 رفع الصور إلى Supabase Storage
+// 📸 رفع الصور إلى Firebase Storage
 // ============================================================
-import { supabase } from '../lib/supabase';
+import { storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { showToast } from '../components/ToastContainer';
-
-const BUCKET = 'store-assets';
 
 /**
  * ضغط الصورة قبل رفعها (باستخدام Canvas)
@@ -44,7 +43,7 @@ async function compressImage(file: File, maxWidth = 1200, quality = 0.8): Promis
 }
 
 /**
- * رفع صورة إلى Supabase Storage
+ * رفع صورة إلى Firebase Storage
  * @returns رابط الصورة العام أو null
  */
 export async function uploadImage(
@@ -52,78 +51,42 @@ export async function uploadImage(
     folder: string = 'products'
 ): Promise<string | null> {
     try {
-        // console.log('🖼️ بدأت عملية ضغط الصورة...');
         // ضغط الصورة
         const compressed = await compressImage(file);
-        // console.log('✅ اكتمل ضغط الصورة، جاري الرفع إلى Supabase...');
 
         // إنشاء اسم فريد للملف
         const ext = 'webp';
         const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-        // تحويل الـ Blob إلى File لزيادة الاستقرار
+        // تحويل الـ Blob إلى File
         const uploadFile = new File([compressed], 'upload.webp', { type: 'image/webp' });
-        // console.log(`📦 حجم الملف النهائي: ${(uploadFile.size / 1024).toFixed(2)} KB`);
 
-        // رفع الصورة
-        // console.log(`📤 جاري رفع ملف: ${fileName} إلى bucket: ${BUCKET}`);
-
-        const { data, error } = await supabase.storage
-            .from(BUCKET)
-            .upload(fileName, uploadFile, {
-                cacheControl: '3600',
-                contentType: 'image/webp',
-                upsert: false
-            });
-
-        if (error) {
-            // console.error('❌ خطأ في رد Supabase Storage:', error);
-            const errorMsg = error.message || JSON.stringify(error);
-            if (errorMsg.includes('bucket_id')) {
-                showToast('فشل الرفع: المجلد (store-assets) غير موجود.', 'error');
-            } else if (errorMsg.includes('403') || errorMsg.includes('Permission')) {
-                showToast('فشل الرفع: لا توجد صلاحيات (Access Denied).', 'error');
-            } else {
-                showToast(`فشل الرفع: ${errorMsg}`, 'error');
-            }
-            return null;
-        }
-
-        // console.log('📦 استجابة الرفع ناجحة، جاري الحصول على الرابط...');
+        // رفع الصورة إلى Firebase Storage
+        const storageRef = ref(storage, fileName);
+        await uploadBytes(storageRef, uploadFile, {
+            contentType: 'image/webp',
+            cacheControl: 'public, max-age=3600',
+        });
 
         // الحصول على الرابط العام
-        const { data: urlData } = supabase.storage
-            .from(BUCKET)
-            .getPublicUrl(data.path);
-
-        // console.log('✅ تم رفع الصورة بنجاح:', urlData.publicUrl);
-        return urlData.publicUrl;
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
     } catch (err: any) {
-        // console.error('❌ خطأ غير متوقع في رفع الصورة:', err);
-        showToast(`خطأ غير متوقع: ${err.message || 'فشل الاتصال بالخادم'}`, 'error');
+        showToast(`خطأ في رفع الصورة: ${err.message || 'فشل الاتصال بالخادم'}`, 'error');
         return null;
     }
 }
 
 /**
- * حذف صورة من Supabase Storage
+ * حذف صورة من Firebase Storage
  */
 export async function deleteImage(url: string): Promise<boolean> {
     try {
         // استخراج مسار الملف من الرابط
-        const parts = url.split(`/storage/v1/object/public/${BUCKET}/`);
-        if (parts.length < 2) return false;
-
-        const path = parts[1];
-        const { error } = await supabase.storage.from(BUCKET).remove([path]);
-
-        if (error) {
-            // console.error('❌ خطأ في حذف الصورة:', error);
-            return false;
-        }
+        const storageRef = ref(storage, url);
+        await deleteObject(storageRef);
         return true;
     } catch (err) {
-        // console.error('❌ خطأ في حذف الصورة:', err);
         return false;
     }
 }

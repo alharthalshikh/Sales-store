@@ -1,12 +1,16 @@
 // ============================================================
-// 🔄 إدارة حالة المتجر الكاملة + مزامنة Supabase
+// 🔄 إدارة حالة المتجر الكاملة + مزامنة Firestore
 // المنتجات، الأصناف، السلة، المفضلة، الطلبات، الرسائل، العملاء، الإعدادات
 // ============================================================
 import React, { useReducer, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { CartItem, Product, Order, Message, Banner, Customer, LoyaltyReward, Category } from '../types';
 import { products as defaultProducts, categories as defaultCategories } from '../data/products';
 import themeConfig from '../config/theme';
-import { supabase } from '../lib/supabase';
+import { db } from '../lib/firebase';
+import {
+    collection, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc,
+    onSnapshot, query, where, orderBy, writeBatch
+} from 'firebase/firestore';
 import { useAuth } from '../hooks/useAuth';
 import { showToast } from '../components/ToastContainer';
 
@@ -211,294 +215,200 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
 export function StoreProvider({ children }: { children: ReactNode }) {
     const { user, isAdmin, userData } = useAuth();
     const [state, baseDispatch] = useReducer(storeReducer, initialState);
-    const supabaseInitialized = useRef(false);
+    const firestoreInitialized = useRef(false);
 
-    // ===== Dispatch مع مزامنة Supabase =====
+    // ===== Dispatch مع مزامنة Firestore =====
     const dispatch = useCallback((action: StoreAction) => {
         baseDispatch(action);
 
-        // مزامنة مع Supabase في الخلفية (للبيانات العامة)
-        // syncToSupabase(action).catch(err => console.warn('Supabase sync error:', err));
-    }, [user]); // استقرار أكبر للـ dispatch
+        // مزامنة مع Firestore في الخلفية
+        syncToFirestore(action).catch(() => {});
+    }, [user]);
 
-    // ===== المزامنة مع Supabase (البيانات العامة) =====
-    async function syncToSupabase(action: StoreAction) {
+    // ===== دالة مساعدة لحذف كل مستندات مجموعة =====
+    async function clearCollection(colName: string) {
+        const snap = await getDocs(collection(db, colName));
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+    }
+
+    // ===== المزامنة مع Firestore (البيانات العامة) =====
+    async function syncToFirestore(action: StoreAction) {
         try {
             switch (action.type) {
                 case 'ADD_PRODUCT':
-                    await supabase.from('products').upsert(productToDb(action.product));
-                    break;
                 case 'UPDATE_PRODUCT':
-                    await supabase.from('products').upsert(productToDb(action.product));
+                    await setDoc(doc(db, 'products', action.product.id), productToDb(action.product));
                     break;
                 case 'DELETE_PRODUCT':
-                    await supabase.from('products').delete().eq('id', action.productId);
+                    await deleteDoc(doc(db, 'products', action.productId));
                     break;
                 case 'ADD_CATEGORY':
-                    await supabase.from('categories').upsert(categoryToDb(action.category));
-                    break;
                 case 'UPDATE_CATEGORY':
-                    await supabase.from('categories').upsert(categoryToDb(action.category));
+                    await setDoc(doc(db, 'categories', action.category.id), categoryToDb(action.category));
                     break;
                 case 'DELETE_CATEGORY':
-                    await supabase.from('categories').delete().eq('id', action.categoryId);
+                    await deleteDoc(doc(db, 'categories', action.categoryId));
                     break;
-                case 'ADD_ORDER': {
-                    const { error } = await supabase.from('orders').upsert(orderToDb(action.order));
-                    if (error) { /* console.error('❌ فشل حفظ الطلب في السيرفر:', error.message, error.details); */ }
-                    // else console.log('✅ تم حفظ الطلب برقم:', action.order.id);
+                case 'ADD_ORDER':
+                    await setDoc(doc(db, 'orders', action.order.id), orderToDb(action.order));
                     break;
-                }
-                case 'UPDATE_ORDER_STATUS': {
-                    // console.log(`📦 جاري تحديث الطلب ${action.orderId} إلى: ${action.status}`);
-                    const { error } = await supabase.from('orders').update({ status: action.status }).eq('id', action.orderId);
-                    if (error) {
-                        // console.error('❌ فشل تحديث حالة الطلب في السيرفر:', error.message);
-                    } else {
-                        // console.log('✅ تم تحديث حالة الطلب بنجاح في السيرفر');
-                    }
-
-                    // 📦 خصم المخزون تلقائياً عند تأكيد التوصيل (نخصم فقط إذا لم يكن مُوصلاً بالفعل)
+                case 'UPDATE_ORDER_STATUS':
+                    await updateDoc(doc(db, 'orders', action.orderId), { status: action.status });
                     if (action.status === 'delivered') {
                         const order = state.orders.find(o => o.id === action.orderId);
                         if (order && order.status !== 'delivered' && order.items.length > 0) {
                             const deductionItems = order.items.map(item => ({
-                                productId: item.product.id,
-                                quantity: item.quantity,
+                                productId: item.product.id, quantity: item.quantity,
                             }));
                             baseDispatch({ type: 'DEDUCT_STOCK', items: deductionItems });
-                            // console.log('📉 تم خصم المخزون للمنتجات:', deductionItems);
-
-                            // مزامنة المخزون المحدث مع Supabase
                             for (const item of deductionItems) {
                                 const product = state.products.find(p => p.id === item.productId);
                                 if (product) {
                                     const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
-                                    await supabase.from('products').update({
-                                        stock_quantity: newQty,
-                                        in_stock: newQty > 0,
-                                    }).eq('id', item.productId);
+                                    await updateDoc(doc(db, 'products', item.productId), {
+                                        stock_quantity: newQty, in_stock: newQty > 0,
+                                    });
                                 }
                             }
                         }
                     }
                     break;
-                }
-                case 'DEDUCT_STOCK': {
-                    // مزامنة خصم المخزون مع Supabase
+                case 'DEDUCT_STOCK':
                     for (const item of action.items) {
                         const product = state.products.find(p => p.id === item.productId);
                         if (product) {
                             const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
-                            await supabase.from('products').update({
-                                stock_quantity: newQty,
-                                in_stock: newQty > 0,
-                            }).eq('id', item.productId);
+                            await updateDoc(doc(db, 'products', item.productId), {
+                                stock_quantity: newQty, in_stock: newQty > 0,
+                            });
                         }
                     }
                     break;
-                }
-                case 'DELETE_ORDER': {
-                    const { error } = await supabase.from('orders').delete().eq('id', action.orderId);
-                    if (error) { /* console.error('❌ فشل حذف الطلب من السيرفر:', error.message); */ }
+                case 'DELETE_ORDER':
+                    await deleteDoc(doc(db, 'orders', action.orderId));
                     break;
-                }
-                case 'ADD_MESSAGE': {
-                    const { error } = await supabase.from('messages').upsert(messageToDb(action.message));
-                    if (error) { /* console.error('❌ فشل حفظ الرسالة في السيرفر:', error.message); */ }
+                case 'ADD_MESSAGE':
+                    await setDoc(doc(db, 'messages', action.message.id), messageToDb(action.message));
                     break;
-                }
                 case 'MARK_MESSAGE_READ':
-                    await supabase.from('messages').update({ status: 'read' }).eq('id', action.messageId);
+                    await updateDoc(doc(db, 'messages', action.messageId), { status: 'read' });
                     break;
                 case 'DELETE_MESSAGE':
-                    await supabase.from('messages').delete().eq('id', action.messageId);
+                    await deleteDoc(doc(db, 'messages', action.messageId));
                     break;
                 case 'ADD_REVIEW':
-                    await supabase.from('reviews').upsert(reviewToDb(action.review));
+                    await setDoc(doc(db, 'reviews', action.review.id), reviewToDb(action.review));
                     break;
                 case 'DELETE_REVIEW':
-                    await supabase.from('reviews').delete().eq('id', action.reviewId);
+                    await deleteDoc(doc(db, 'reviews', action.reviewId));
                     break;
-                case 'ADD_DISCOUNT_RULE': {
-                    const { error } = await supabase.from('discount_rules').upsert(discountToDb(action.rule));
-                    if (error) {
-                        // console.error('❌ فشل إضافة قاعدة الخصم للسيرفر:', error.message);
-                        showToast(`فشل المزامنة مع السيرفر: ${error.message}`, 'error');
-                    } else {
-                        // console.log('✅ تم حفظ قاعدة الخصم في السيرفر');
-                    }
+                case 'ADD_DISCOUNT_RULE':
+                case 'UPDATE_DISCOUNT_RULE':
+                    await setDoc(doc(db, 'discount_rules', action.rule.id), discountToDb(action.rule));
                     break;
-                }
-                case 'UPDATE_DISCOUNT_RULE': {
-                    const { error } = await supabase.from('discount_rules').upsert(discountToDb(action.rule));
-                    if (error) { /* console.error('❌ فشل تحديث قاعدة الخصم في السيرفر:', error.message); */ }
+                case 'REMOVE_DISCOUNT_RULE':
+                    await deleteDoc(doc(db, 'discount_rules', action.ruleId));
                     break;
-                }
-                case 'REMOVE_DISCOUNT_RULE': {
-                    const { error } = await supabase.from('discount_rules').delete().eq('id', action.ruleId);
-                    if (error) { /* console.error('❌ فشل حذف قاعدة الخصم من السيرفر:', error.message); */ }
-                    break;
-                }
                 case 'TOGGLE_DISCOUNT_RULE': {
-                    // جلب القيمة الحالية وعكسها في قاعدة البيانات
                     const currentRule = state.discountRules.find(r => r.id === action.ruleId);
                     if (currentRule) {
-                        const { error } = await supabase.from('discount_rules').update({ active: !currentRule.active }).eq('id', action.ruleId);
-                        if (error) { /* console.error('❌ فشل تحديث حالة التخفيض:', error.message); */ }
-                        // else console.log('✅ تم تحديث حالة التخفيض في السيرفر');
+                        await updateDoc(doc(db, 'discount_rules', action.ruleId), { active: !currentRule.active });
                     }
                     break;
                 }
                 case 'ADD_CUSTOMER': {
-                    // مزامنة مع جدول users الموحد
                     const customer = action.customer;
-                    await supabase.from('users').upsert({
-                        id: customer.id,
-                        email: customer.email || '',
-                        name: customer.name || 'عميل جديد',
-                        phone: customer.phone || '',
-                        role: 'customer',
-                        is_active: true,
-                        is_suspended: false
-                    }, { onConflict: 'id' });
+                    await setDoc(doc(db, 'users', customer.id), {
+                        email: customer.email || '', name: customer.name || 'عميل جديد',
+                        phone: customer.phone || '', role: 'customer',
+                        is_active: true, is_suspended: false,
+                        created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+                    }, { merge: true });
                     break;
                 }
                 case 'UPDATE_SETTINGS': {
                     const dbSettings = settingsToDb({ ...state.settings, ...action.settings });
-                    // console.log('📡 جاري محاولة الحفظ المطور...', dbSettings);
-
-                    try {
-                        // تقليل وقت الانتظار للمحاولة الأولى لضمان استجابة أسرع في حال وجود خطأ في الأعمدة
-                        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 8000));
-
-                        const performSync = async () => {
-                            // 1. محاولة الحفظ الكامل
-                            const { error: fullError } = await supabase.from('settings').upsert(dbSettings, { onConflict: 'id' });
-
-                            if (fullError) {
-                                // console.warn('⚠️ فشل الحفظ الكامل، جاري محاولة الحفظ الآمن...', fullError.message);
-
-                                // 2. محاولة الحفظ بدون الميزات الجديدة (التوصيل المطور والولاء)
-                                const level1Safe = { ...dbSettings };
-                                const keysToRemove = [
-                                    'loyalty_enabled', 'loyalty_points_ratio', 'terms_conditions', 'privacy_policy',
-                                    'instagram_link', 'facebook_link', 'snapchat_link', 'delivery_fee', 'min_order',
-                                    'free_shipping_threshold', 'store_lat', 'store_lng', 'delivery_price_per_km'
-                                ];
-                                keysToRemove.forEach(key => delete (level1Safe as any)[key]);
-
-                                const { error: err1 } = await supabase.from('settings').upsert(level1Safe, { onConflict: 'id' });
-                                if (!err1) {
-                                    // console.log('✅ تم الحفظ بنجاح (النسخة المتوافقة)');
-                                    return;
-                                }
-
-                                // 3. الحفظ الأساسي جداً كخيار أخير
-                                const level2Safe = {
-                                    id: 1,
-                                    store_name: dbSettings.store_name,
-                                    store_logo: dbSettings.store_logo,
-                                    whatsapp_number: dbSettings.whatsapp_number
-                                };
-                                await supabase.from('settings').upsert(level2Safe, { onConflict: 'id' });
-                            }
-                        };
-
-                        await Promise.race([performSync(), timeout]);
-                        // console.log('✅ انتهت المزامنة بنجاح');
-                    } catch (err: any) {
-                        // console.error('❌ خطأ في المزامنة:', err.message);
-                        // لا نظهر التنبيه للمستخدم لضمان استمرارية العمل محلياً
-                    }
+                    await setDoc(doc(db, 'settings', 'main'), dbSettings);
                     break;
                 }
                 case 'ADD_BANNER':
-                    await supabase.from('banners').upsert(bannerToDb(action.banner));
-                    break;
                 case 'UPDATE_BANNER':
-                    await supabase.from('banners').upsert(bannerToDb(action.banner));
+                    await setDoc(doc(db, 'banners', action.banner.id), bannerToDb(action.banner));
                     break;
                 case 'DELETE_BANNER':
-                    await supabase.from('banners').delete().eq('id', action.bannerId);
+                    await deleteDoc(doc(db, 'banners', action.bannerId));
                     break;
-                case 'CLEAR_USER_MESSAGES':
-                    if (action.userId) {
-                        await supabase.from('messages').delete().eq('user_id', action.userId);
-                    } else if (action.phone) {
-                        await supabase.from('messages').delete().eq('sender_phone', action.phone);
-                    }
-                    break;
-                case 'ADD_REWARD': {
-                    // console.log('💎 جاري إضافة مكافأة جديدة للسيرفر...', action.reward);
-                    const { error } = await supabase.from('rewards').upsert(rewardToDb(action.reward));
-                    if (error) { /* console.error('❌ فشل إضافة المكافأة:', error.message); */ }
-                    else { /* console.log('✅ تم حفظ المكافأة بنجاح'); */ }
-                    break;
-                }
-                case 'UPDATE_REWARD': {
-                    const { error } = await supabase.from('rewards').upsert(rewardToDb(action.reward));
-                    if (error) { /* console.error('❌ فشل تحديث المكافأة:', error.message); */ }
+                case 'CLEAR_USER_MESSAGES': {
+                    const msgsSnap = await getDocs(collection(db, 'messages'));
+                    const batch = writeBatch(db);
+                    msgsSnap.docs.forEach(d => {
+                        const data = d.data();
+                        if ((action.userId && data.user_id === action.userId) ||
+                            (action.phone && data.contact_info === action.phone)) {
+                            batch.delete(d.ref);
+                        }
+                    });
+                    await batch.commit();
                     break;
                 }
-                case 'DELETE_REWARD': {
-                    const { error } = await supabase.from('rewards').delete().eq('id', action.rewardId);
-                    if (error) { /* console.error('❌ فشل حذف المكافأة:', error.message); */ }
+                case 'ADD_REWARD':
+                case 'UPDATE_REWARD':
+                    await setDoc(doc(db, 'rewards', action.reward.id), rewardToDb(action.reward));
                     break;
-                }
+                case 'DELETE_REWARD':
+                    await deleteDoc(doc(db, 'rewards', action.rewardId));
+                    break;
                 case 'BAN_CUSTOMER': {
-                    await supabase.from('users').update({ is_suspended: true }).eq('phone', action.phone);
+                    const usersSnap = await getDocs(query(collection(db, 'users'), where('phone', '==', action.phone)));
+                    for (const d of usersSnap.docs) await updateDoc(d.ref, { is_suspended: true });
                     break;
                 }
                 case 'UNBAN_CUSTOMER': {
-                    await supabase.from('users').update({ is_suspended: false }).eq('phone', action.phone);
+                    const usersSnap = await getDocs(query(collection(db, 'users'), where('phone', '==', action.phone)));
+                    for (const d of usersSnap.docs) await updateDoc(d.ref, { is_suspended: false });
                     break;
                 }
                 case 'DELETE_CUSTOMER': {
-                    const { error } = await supabase.from('users').delete().eq('phone', action.phone);
-                    if (error) { /* console.error('❌ فشل حذف العميل:', error.message); */ }
+                    const usersSnap = await getDocs(query(collection(db, 'users'), where('phone', '==', action.phone)));
+                    for (const d of usersSnap.docs) await deleteDoc(d.ref);
                     break;
                 }
-                case 'CLEAR_ORDERS':
-                    await supabase.from('orders').delete().neq('id', '_none_');
+                case 'CLEAR_ORDERS': await clearCollection('orders'); break;
+                case 'CLEAR_MESSAGES': await clearCollection('messages'); break;
+                case 'CLEAR_REVIEWS': await clearCollection('reviews'); break;
+                case 'CLEAR_CUSTOMERS': {
+                    const snap = await getDocs(collection(db, 'users'));
+                    const batch = writeBatch(db);
+                    snap.docs.forEach(d => {
+                        if (d.data().email !== 'alharth465117@gmail.com') batch.delete(d.ref);
+                    });
+                    await batch.commit();
                     break;
-                case 'CLEAR_MESSAGES':
-                    await supabase.from('messages').delete().neq('id', '_none_');
-                    break;
-                case 'CLEAR_REVIEWS':
-                    await supabase.from('reviews').delete().neq('id', '_none_');
-                    break;
-                case 'CLEAR_CUSTOMERS':
-                    await supabase.from('users').delete().neq('email', 'alharth465117@gmail.com');
-                    break;
-                case 'CLEAR_REWARDS':
-                    await supabase.from('rewards').delete().neq('id', '_none_');
-                    break;
-                case 'CLEAR_PRODUCTS':
-                    await supabase.from('products').delete().neq('id', '_none_');
-                    break;
-                case 'CLEAR_CATEGORIES':
-                    await supabase.from('categories').delete().neq('id', '_none_');
-                    break;
+                }
+                case 'CLEAR_REWARDS': await clearCollection('rewards'); break;
+                case 'CLEAR_PRODUCTS': await clearCollection('products'); break;
+                case 'CLEAR_CATEGORIES': await clearCollection('categories'); break;
                 case 'FACTORY_RESET':
                     await Promise.all([
-                        supabase.from('products').delete().neq('id', '_none_'),
-                        supabase.from('categories').delete().neq('id', '_none_'),
-                        supabase.from('orders').delete().neq('id', '_none_'),
-                        supabase.from('messages').delete().neq('id', '_none_'),
-                        supabase.from('reviews').delete().neq('id', '_none_'),
-                        supabase.from('users').delete().neq('email', 'alharth465117@gmail.com'),
-                        supabase.from('discount_rules').delete().neq('id', '_none_'),
-                        supabase.from('banners').delete().neq('id', '_none_'),
-                        supabase.from('rewards').delete().neq('id', '_none_'),
-                        supabase.from('settings').upsert(settingsToDb(defaultSettings))
+                        clearCollection('products'), clearCollection('categories'),
+                        clearCollection('orders'), clearCollection('messages'),
+                        clearCollection('reviews'), clearCollection('discount_rules'),
+                        clearCollection('banners'), clearCollection('rewards'),
                     ]);
-                    localStorage.clear(); // مسح شامل لكل الكاش المحلي
+                    // حذف المستخدمين ماعدا المدير
+                    const usSnap = await getDocs(collection(db, 'users'));
+                    const fBatch = writeBatch(db);
+                    usSnap.docs.forEach(d => {
+                        if (d.data().email !== 'alharth465117@gmail.com') fBatch.delete(d.ref);
+                    });
+                    await fBatch.commit();
+                    await setDoc(doc(db, 'settings', 'main'), settingsToDb(defaultSettings));
+                    localStorage.clear();
                     break;
             }
-        } catch (err) {
-            // console.warn('Supabase sync failed (General):', err);
-        }
+        } catch (err) { }
     }
 
     // ===== مراقبة ومزامنة المفضلة والسلة (الحساب) =====
@@ -509,60 +419,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!user) return;
 
         // مزامنة المفضلة
-        // رصد التغييرات الحقيقي ومزامنتها فقط إذا كان هناك مستخدم
         const syncFavs = async () => {
-            if (!state.isDataInitialized) return; // منع التزامن قبل تحميل البيانات
+            if (!state.isDataInitialized) return;
             try {
                 const added = state.favorites.filter(id => !prevFavs.current.includes(id));
                 const removed = prevFavs.current.filter(id => !state.favorites.includes(id));
-
                 if (added.length === 0 && removed.length === 0) return;
 
-                // console.log(`☁️ Syncing Favorites: Added ${added.length}, Removed ${removed.length}`);
-
                 for (const id of added) {
-                    await supabase.from('user_favorites').upsert(
-                        { user_id: user.uid, product_id: id },
-                        { onConflict: 'user_id,product_id' }
-                    );
+                    await setDoc(doc(db, 'user_favorites', `${user.uid}_${id}`), {
+                        user_id: user.uid, product_id: id
+                    });
                 }
                 for (const id of removed) {
-                    await supabase.from('user_favorites').delete().eq('user_id', user.uid).eq('product_id', id);
+                    await deleteDoc(doc(db, 'user_favorites', `${user.uid}_${id}`));
                 }
                 prevFavs.current = [...state.favorites];
-            } catch (e) {
-                // console.error("❌ Error syncing favorites:", e);
-            }
+            } catch (e) { }
         };
 
         // مزامنة السلة
         const syncCart = async () => {
-            if (!state.isDataInitialized) return; // منع التزامن قبل تحميل البيانات
+            if (!state.isDataInitialized) return;
             try {
-                // تحديث/إضافة
                 for (const item of state.cart) {
                     const prev = prevCart.current.find(p => p.product.id === item.product.id);
                     if (!prev || prev.quantity !== item.quantity) {
-                        await supabase.from('user_cart').upsert(
-                            {
-                                user_id: user.uid,
-                                product_id: item.product.id,
-                                quantity: item.quantity
-                            },
-                            { onConflict: 'user_id,product_id' }
-                        );
+                        await setDoc(doc(db, 'user_cart', `${user.uid}_${item.product.id}`), {
+                            user_id: user.uid, product_id: item.product.id, quantity: item.quantity
+                        });
                     }
                 }
-                // حذف
                 for (const prev of prevCart.current) {
                     if (!state.cart.find(i => i.product.id === prev.product.id)) {
-                        await supabase.from('user_cart').delete().eq('user_id', user.uid).eq('product_id', prev.product.id);
+                        await deleteDoc(doc(db, 'user_cart', `${user.uid}_${prev.product.id}`));
                     }
                 }
                 prevCart.current = [...state.cart];
-            } catch (e) {
-                // console.error("❌ Error syncing cart:", e);
-            }
+            } catch (e) { }
         };
 
         syncFavs();
@@ -575,135 +469,97 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (user) {
             const loadKey = `${user.uid}-${isAdmin}`;
-            // منع التحميل المتكرر لنفس المستخدم
             if (userDataLoaded.current === loadKey) return;
             userDataLoaded.current = loadKey;
 
             const fetchUserData = async () => {
-                // console.log('🚀 Starting fetchUserData for user:', user.uid, 'isAdmin:', isAdmin);
                 const results: Partial<StoreState> = {};
-
                 try {
-                    const userPhone = userData?.phone || '';
-                    const profileData = {
-                        id: user.uid,
+                    // حفظ/تحديث بيانات المستخدم في Firestore
+                    await setDoc(doc(db, 'users', user.uid), {
                         name: userData?.name || user.displayName || user.email?.split('@')[0] || 'عميل',
-                        email: user.email,
-                        phone: userPhone,
-                        updated_at: new Date().toISOString()
-                    };
-
-                    // استخدام upsert بدلاً من insert/update لتجنب أخطاء 409
-                    await supabase.from('users').upsert({
-                        ...profileData,
+                        email: user.email || '',
+                        phone: userData?.phone || '',
                         role: isAdmin ? 'admin' : 'customer',
                         is_active: true,
-                        is_suspended: false
-                    }, { onConflict: 'id' });
+                        is_suspended: false,
+                        updated_at: new Date().toISOString()
+                    }, { merge: true });
 
-
-                    // 1. جلب السلة والمفضلة
-                    const [favsRes, cartRes] = await Promise.all([
-                        supabase.from('user_favorites').select('product_id').eq('user_id', user.uid),
-                        supabase.from('user_cart').select('product_id, quantity').eq('user_id', user.uid)
+                    // 1. جلب المفضلة والسلة من Firestore
+                    const [favsSnap, cartSnap] = await Promise.all([
+                        getDocs(query(collection(db, 'user_favorites'), where('user_id', '==', user.uid))),
+                        getDocs(query(collection(db, 'user_cart'), where('user_id', '==', user.uid)))
                     ]);
 
-                    if (favsRes.data) {
-                        const cloudFavs = favsRes.data.map((f: any) => f.product_id);
-                        // عند تسجيل الدخول، نعتمد بيانات الكلاود للمستخدم الجديد كلياً
-                        results.favorites = cloudFavs;
-                        // تحديث المرجعية لمنع المزامنة العكسية غير الضرورية
-                        prevFavs.current = cloudFavs;
-                    }
+                    const cloudFavs = favsSnap.docs.map(d => d.data().product_id);
+                    results.favorites = cloudFavs;
+                    prevFavs.current = cloudFavs;
 
-                    if (cartRes.data) {
-                        const cloudCart = cartRes.data.map((c: any) => {
-                            const product = state.products.find(p => p.id === c.product_id);
-                            return product ? { product, quantity: c.quantity } : null;
-                        }).filter(Boolean) as CartItem[];
+                    const cloudCart = cartSnap.docs.map(d => {
+                        const data = d.data();
+                        const product = state.products.find(p => p.id === data.product_id);
+                        return product ? { product, quantity: data.quantity } : null;
+                    }).filter(Boolean) as CartItem[];
+                    results.cart = cloudCart;
+                    prevCart.current = cloudCart;
 
-                        // نعتمد سلة الكلاود للمستخدم الجديد فقط
-                        results.cart = cloudCart;
-                        // تحديث المرجعية
-                        prevCart.current = cloudCart;
-                    }
-
-                    // 2. جلب الطلبات والرسائل الخاصة
-                    let ordersQuery = supabase.from('orders').select('*');
-                    let messagesQuery = supabase.from('messages').select('*');
-
-                    if (!isAdmin) {
-                        const userPhone = userData?.phone;
-                        if (userPhone) {
-                            ordersQuery = ordersQuery.or(`user_id.eq."${user.uid}",customer_phone.eq."${userPhone}"`);
-                            messagesQuery = messagesQuery.or(`user_id.eq."${user.uid}",contact_info.eq."${userPhone}"`);
-                        } else {
-                            ordersQuery = ordersQuery.eq('user_id', user.uid);
-                            messagesQuery = messagesQuery.eq('user_id', user.uid);
-                        }
-                    }
-
-                    const [ordersRes, messagesRes] = await Promise.all([ordersQuery, messagesQuery]);
-                    if (ordersRes.data) results.orders = ordersRes.data.map(dbToOrder);
-                    if (messagesRes.data) results.messages = messagesRes.data.map(dbToMessage);
-
-                    // 3. لو كان أدمن، نجلب قائمة المستخدمين من الجدول الموحد
+                    // 2. جلب الطلبات والرسائل
                     if (isAdmin) {
-                        try {
-                            const { data: allUsers, error: usersError } = await supabase
-                                .from('users')
-                                .select('*')
-                                .order('created_at', { ascending: false });
-
-                            if (!usersError && allUsers) {
-                                results.customers = allUsers.map(u => ({
-                                    ...dbToCustomer(u),
-                                    role: u.role || 'customer'
-                                }));
-                                // console.log(`✅ Admin fetch: ${allUsers.length} users loaded`);
-                            }
-                        } catch (e) {
-                            // console.error('❌ Error fetching users:', e);
-                        }
+                        const [ordersSnap, msgsSnap] = await Promise.all([
+                            getDocs(collection(db, 'orders')),
+                            getDocs(collection(db, 'messages'))
+                        ]);
+                        results.orders = ordersSnap.docs.map(d => dbToOrder({ ...d.data(), id: d.id }));
+                        results.messages = msgsSnap.docs.map(d => dbToMessage({ ...d.data(), id: d.id }));
+                    } else {
+                        // المستخدم العادي: جلب طلباته ورسائله فقط
+                        const ordersSnap = await getDocs(collection(db, 'orders'));
+                        const msgsSnap = await getDocs(collection(db, 'messages'));
+                        const userPhone = userData?.phone;
+                        results.orders = ordersSnap.docs
+                            .map(d => dbToOrder({ ...d.data(), id: d.id }))
+                            .filter(o => o.userId === user.uid || (userPhone && o.customerPhone === userPhone));
+                        results.messages = msgsSnap.docs
+                            .map(d => dbToMessage({ ...d.data(), id: d.id }))
+                            .filter(m => m.userId === user.uid || (userPhone && m.senderPhone === userPhone));
                     }
 
-                    // console.log('📤 Dispatching private user data load...', {
-                    //     orders: results.orders?.length,
-                    //     messages: results.messages?.length,
-                    //     customers: results.customers?.length
-                    // });
+                    // 3. لو أدمن، نجلب قائمة المستخدمين
+                    if (isAdmin) {
+                        const usersSnap = await getDocs(collection(db, 'users'));
+                        results.customers = usersSnap.docs.map(d => ({
+                            ...dbToCustomer({ ...d.data(), id: d.id }),
+                            role: d.data().role || 'customer'
+                        }));
+                    }
 
-                    // تحديث الحالة مرة واحدة فقط بجميع البيانات المجلوبة
                     baseDispatch({ type: 'LOAD_STATE', state: results });
-                } catch (err) {
-                    // console.warn('Error fetching private user data:', err);
-                }
+                } catch (err) { }
             };
 
             fetchUserData();
         } else if (userDataLoaded.current !== null) {
-            // تنظيف البيانات الحساسة عند تسجيل الخروج
             userDataLoaded.current = null;
             prevFavs.current = [];
             prevCart.current = [];
             localStorage.removeItem('store-cart');
             localStorage.removeItem('store-favorites');
-            // مسح الكوكيز المتعلقة بالهوية إذا وجدت بموثوقية
             try {
                 document.cookie.split(";").forEach((c) => {
                     document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
                 });
-            } catch (e) { /* console.error("Cookie clear error:", e); */ }
+            } catch (e) { }
             baseDispatch({ type: 'LOGOUT' });
         }
     }, [user?.uid, isAdmin, state.products.length]);
     // ===== تحميل البيانات العامة والمشتركة =====
     useEffect(() => {
-        if (supabaseInitialized.current) return;
-        supabaseInitialized.current = true;
+        if (firestoreInitialized.current) return;
+        firestoreInitialized.current = true;
 
-        // مسح الكاش القديم لمنع ظهور البيانات التجريبية
-        const CACHE_VERSION = 'v4';
+        // مسح الكاش القديم
+        const CACHE_VERSION = 'v5-firestore';
         const currentVersion = localStorage.getItem('store-cache-version');
         if (currentVersion !== CACHE_VERSION) {
             localStorage.removeItem('store-state-v2');
@@ -712,66 +568,50 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('store-cache-version', CACHE_VERSION);
         }
 
-        // ✅ الخطوة 1: تحميل الكاش المحلي فوراً (آخر بيانات حقيقية) قبل الاتصال بالسيرفر
         loadCachedDataFirst();
-
-        // ✅ الخطوة 2: محاولة جلب البيانات الحديثة من السيرفر في الخلفية
-        loadFromSupabase();
+        loadFromFirestore();
     }, []);
 
-    // ===== مراقبة التغييرات في الوقت الحقيقي (مع الفلترة الأمنية) =====
+    // ===== مراقبة التغييرات في الوقت الحقيقي عبر Firestore onSnapshot =====
     useEffect(() => {
-        const subscription = supabase
-            .channel('store-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, (payload) => {
-                if (payload.new) baseDispatch({ type: 'UPDATE_SETTINGS', settings: dbToSettings(payload.new) });
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, () => {
-                supabase.from('banners').select('*').then(({ data }) => {
-                    if (data) baseDispatch({ type: 'LOAD_STATE', state: { banners: data.map(dbToBanner) } });
-                });
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'discount_rules' }, () => {
-                supabase.from('discount_rules').select('*').then(({ data }) => {
-                    if (data) baseDispatch({ type: 'LOAD_STATE', state: { discountRules: data.map(dbToDiscount) } });
-                });
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
-                const msg = dbToMessage(payload.new || payload.old);
-                // فلترة: لو كان أدمن يرى الكل، لو كان مستخدم يرى رسائله فقط
-                if (isAdmin || (user && msg.userId === user.uid)) {
-                    if (payload.eventType === 'INSERT') baseDispatch({ type: 'ADD_MESSAGE', message: msg });
-                    else if (payload.eventType === 'UPDATE') baseDispatch({ type: 'MARK_MESSAGE_READ', messageId: msg.id });
-                }
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-                const order = dbToOrder(payload.new || payload.old);
-                // فلترة: لو كان أدمن يرى الكل، لو كان مستخدم يرى طلباته فقط
-                if (isAdmin || (user && order.userId === user.uid)) {
-                    if (payload.eventType === 'INSERT') baseDispatch({ type: 'ADD_ORDER', order });
-                    else if (payload.eventType === 'UPDATE') baseDispatch({ type: 'UPDATE_ORDER_STATUS', orderId: order.id, status: order.status });
-                    else if (payload.eventType === 'DELETE') baseDispatch({ type: 'DELETE_ORDER', orderId: order.id });
-                }
-            })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'rewards' }, () => {
-                supabase.from('rewards').select('*').then(({ data }) => {
-                    if (data) baseDispatch({ type: 'LOAD_STATE', state: { rewards: data.map(dbToReward) } });
-                });
-            })
-            .subscribe();
+        const unsubscribers: (() => void)[] = [];
+
+        // مراقبة الإعدادات
+        unsubscribers.push(onSnapshot(doc(db, 'settings', 'main'), (snap) => {
+            if (snap.exists()) {
+                baseDispatch({ type: 'UPDATE_SETTINGS', settings: dbToSettings(snap.data()) });
+            }
+        }));
+
+        // مراقبة البانرات
+        unsubscribers.push(onSnapshot(collection(db, 'banners'), (snap) => {
+            const banners = snap.docs.map(d => dbToBanner({ ...d.data(), id: d.id }));
+            baseDispatch({ type: 'LOAD_STATE', state: { banners } });
+        }));
+
+        // مراقبة قواعد الخصم
+        unsubscribers.push(onSnapshot(collection(db, 'discount_rules'), (snap) => {
+            const discountRules = snap.docs.map(d => dbToDiscount({ ...d.data(), id: d.id }));
+            baseDispatch({ type: 'LOAD_STATE', state: { discountRules } });
+        }));
+
+        // مراقبة المكافآت
+        unsubscribers.push(onSnapshot(collection(db, 'rewards'), (snap) => {
+            const rewards = snap.docs.map(d => dbToReward({ ...d.data(), id: d.id }));
+            baseDispatch({ type: 'LOAD_STATE', state: { rewards } });
+        }));
 
         return () => {
-            subscription.unsubscribe();
+            unsubscribers.forEach(unsub => unsub());
         };
-    }, [user, isAdmin]);
+    }, []);
 
-    // ✅ تحميل الكاش المحلي فوراً عند فتح التطبيق (قبل السيرفر)
+    // ✅ تحميل الكاش المحلي فوراً عند فتح التطبيق
     function loadCachedDataFirst() {
         try {
             const saved = localStorage.getItem('store-state-v2');
             if (saved) {
                 const parsed = JSON.parse(saved);
-                // التأكد من أن الكاش يحتوي بيانات حقيقية وليست فارغة
                 const hasCachedData = parsed.settings?.storeName ||
                     (parsed.products?.length > 0) ||
                     (parsed.categories?.length > 0);
@@ -785,108 +625,72 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         banners: parsed.banners || [],
                         rewards: parsed.rewards || [],
                     };
-
-                    // جلب السلة والمفضلة المحلية
                     try {
                         const localCart = localStorage.getItem('store-cart');
                         const localFavs = localStorage.getItem('store-favorites');
                         if (localCart) cachedState.cart = JSON.parse(localCart);
                         if (localFavs) cachedState.favorites = JSON.parse(localFavs);
                     } catch (e) { }
-
                     baseDispatch({ type: 'LOAD_STATE', state: cachedState });
                 }
             }
         } catch (e) { }
     }
 
-    async function loadFromSupabase() {
+    async function loadFromFirestore() {
         try {
-            const tables = ['categories', 'products', 'reviews', 'discount_rules', 'settings', 'banners', 'rewards'];
-
+            const collections = ['categories', 'products', 'reviews', 'discount_rules', 'banners', 'rewards'];
             const loadedState: Partial<StoreState> = {};
-            const promises = tables.map(async (table) => {
-                const fetchPromise = (async () => {
-                    try {
-                        const { data, error } = await supabase.from(table).select('*');
-                        if (error) return { table, data: null, error };
-                        return { table, data, error: null };
-                    } catch (e) {
-                        return { table, data: null, error: e };
-                    }
-                })();
-
-                const timeoutPromise = new Promise((resolve) =>
-                    setTimeout(() => resolve({ table, data: null, error: 'TIMEOUT' }), 15000)
-                );
-
-                return Promise.race([fetchPromise, timeoutPromise]) as Promise<any>;
-            });
-
-            const results = await Promise.all(promises);
             let serverHasData = false;
 
-            results.forEach(({ table, data, error }) => {
-                if (error || !data) return;
+            const results = await Promise.all(
+                collections.map(async (col) => {
+                    try {
+                        const snap = await getDocs(collection(db, col));
+                        return { col, docs: snap.docs.map(d => ({ ...d.data(), id: d.id })) };
+                    } catch (e) {
+                        return { col, docs: null };
+                    }
+                })
+            );
+
+            results.forEach(({ col, docs }) => {
+                if (!docs) return;
                 serverHasData = true;
-                switch (table) {
-                    case 'categories': loadedState.categories = data.map(dbToCategory); break;
-                    case 'products': loadedState.products = data.map(dbToProduct); break;
-                    case 'orders': loadedState.orders = data.map(dbToOrder); break;
-                    case 'messages': loadedState.messages = data.map(dbToMessage); break;
-                    case 'reviews': loadedState.reviews = data.map(dbToReview); break;
-                    case 'discount_rules': loadedState.discountRules = data.map(dbToDiscount); break;
-                    case 'settings':
-                        if (data.length > 0) {
-                            const mainSettings = data.find((r: any) => r.id === 1) || data[0];
-                            loadedState.settings = dbToSettings(mainSettings);
-                        }
-                        break;
-                    case 'banners': loadedState.banners = data.map(dbToBanner); break;
-                    case 'rewards': loadedState.rewards = data.map(dbToReward); break;
+                switch (col) {
+                    case 'categories': loadedState.categories = docs.map(dbToCategory); break;
+                    case 'products': loadedState.products = docs.map(dbToProduct); break;
+                    case 'reviews': loadedState.reviews = docs.map(dbToReview); break;
+                    case 'discount_rules': loadedState.discountRules = docs.map(dbToDiscount); break;
+                    case 'banners': loadedState.banners = docs.map(dbToBanner); break;
+                    case 'rewards': loadedState.rewards = docs.map(dbToReward); break;
                 }
             });
 
-            // ✅ إذا نجح جلب بيانات من السيرفر، نحدّث الواجهة والكاش
+            // جلب الإعدادات (مستند واحد)
+            try {
+                const settingsDoc = await getDoc(doc(db, 'settings', 'main'));
+                if (settingsDoc.exists()) {
+                    loadedState.settings = dbToSettings(settingsDoc.data());
+                    serverHasData = true;
+                }
+            } catch (e) { }
+
             if (serverHasData) {
-                // جلب السلة والمفضلة المحلية
                 try {
                     const localCart = localStorage.getItem('store-cart');
                     const localFavs = localStorage.getItem('store-favorites');
                     if (localCart) loadedState.cart = JSON.parse(localCart);
                     if (localFavs) loadedState.favorites = JSON.parse(localFavs);
                 } catch (e) { }
-
                 loadedState.isDataInitialized = true;
                 baseDispatch({ type: 'LOAD_STATE', state: loadedState });
             } else {
-                // ✅ السيرفر فشل ولكن الكاش المحلي تم تحميله مسبقاً في loadCachedDataFirst
                 baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
             }
         } catch (err) {
-            // ✅ خطأ في الاتصال = نبقى على الكاش المحلي الذي تم تحميله
             baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
         }
-    }
-
-    async function seedSupabase() {
-        try {
-            const [{ count: catCount }, { count: prodCount }, { count: settCount }] = await Promise.all([
-                supabase.from('categories').select('*', { count: 'exact', head: true }),
-                supabase.from('products').select('*', { count: 'exact', head: true }),
-                supabase.from('settings').select('*', { count: 'exact', head: true })
-            ]);
-
-            if (catCount === 0) {
-                for (const cat of defaultCategories) await supabase.from('categories').upsert(categoryToDb(cat));
-            }
-            if (prodCount === 0) {
-                for (const prod of defaultProducts) await supabase.from('products').upsert(productToDb(prod));
-            }
-            if (settCount === 0) {
-                await supabase.from('settings').upsert(settingsToDb(defaultSettings));
-            }
-        } catch (err) { }
     }
 
     useEffect(() => {

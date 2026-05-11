@@ -11,7 +11,7 @@ import { formatOrderId } from '../utils/formatOrderId';
 import { showToast } from '../components/ToastContainer';
 import { Product, Category, DiscountRule, Order, Review, LoyaltyReward } from '../types';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+
 import { generateInvoicePDF } from '../utils/invoiceGenerator';
 import { uploadImage } from '../utils/imageUploader';
 import { StoreSettings } from '../context/StoreContextItems';

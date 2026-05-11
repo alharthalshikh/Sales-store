@@ -72,7 +72,7 @@ export interface StoreState {
     bannedCustomers: string[];
     isCartOpen: boolean;
     isMobileMenuOpen: boolean;
-    supabaseReady: boolean;
+
     unreadFavoritesCount: number;
     rewards: LoyaltyReward[];
     isDataInitialized: boolean;
@@ -156,13 +156,13 @@ export const initialState: StoreState = {
     bannedCustomers: [],
     isCartOpen: false,
     isMobileMenuOpen: false,
-    supabaseReady: false,
+
     unreadFavoritesCount: 0,
     rewards: [],
     isDataInitialized: false,
 };
 
-// 🔄 دوال المزامنة مع Supabase (Helpers)
+// 🔄 دوال تحويل البيانات (Helpers)
 export function dbToBanner(row: any): Banner {
     return {
         id: row.id,
