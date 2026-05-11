@@ -63,11 +63,18 @@ export default function CheckoutPage() {
     const reverseGeocode = async (lat: number, lng: number) => {
         setLoadingAddress(true);
         try {
-            // المحاولة الأولى: Nominatim مع User-Agent
+            // تحديد مهلة زمنية 3 ثواني فقط للمحاولة الأولى لسرعة الانتقال للبديل
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ar`,
-                { headers: { 'User-Agent': 'SalesStore/1.0' } }
+                { 
+                    headers: { 'User-Agent': 'SalesStore/1.0' },
+                    signal: controller.signal
+                }
             );
+            clearTimeout(timeoutId);
             const data = await response.json();
             if (data && data.display_name) {
                 setForm(prev => ({ ...prev, address: data.display_name }));
