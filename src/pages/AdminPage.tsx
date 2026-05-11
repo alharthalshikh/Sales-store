@@ -1614,43 +1614,7 @@ export default function AdminPage() {
 
         {/* ================== MODALS ================== */}
 
-                                    <input value={tagsInput} onChange={e => setTagsInput(e.target.value)} placeholder="عسل, طبيعي, سدر"
-                                        style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)' }} />
-                                </div>
-                                {/* حقول المخزون */}
-                                <div style={{ gridColumn: '1 / -1', background: 'var(--bg)', borderRadius: 12, padding: 16, border: '1px solid var(--border)' }}>
-                                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: 12, color: 'var(--accent)' }}>📦 إدارة المخزون</label>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>الكمية المتاحة *</label>
-                                            <input type="number" min="0" value={productForm.stockQuantity ?? 0} onChange={e => setProductForm(p => ({ ...p, stockQuantity: Math.max(0, Number(e.target.value)) }))}
-                                                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: '1.1rem' }} />
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: 6 }}>حد التنبيه (مخزون منخفض)</label>
-                                            <input type="number" min="1" value={productForm.lowStockThreshold ?? 5} onChange={e => setProductForm(p => ({ ...p, lowStockThreshold: Math.max(1, Number(e.target.value)) }))}
-                                                style={{ width: '100%', padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)' }} />
-                                        </div>
-                                    </div>
-                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: 8 }}>
-                                        💡 سيتم تحديد حالة التوفر تلقائياً بناءً على الكمية. إذا وصلت الكمية إلى 0 سيظهر المنتج كـ"نفد".
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                                        <input type="checkbox" checked={productForm.featured ?? false} onChange={e => setProductForm(p => ({ ...p, featured: e.target.checked }))} />
-                                        ⭐ منتج مميز
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>إلغاء</button>
-                            <button className="btn btn-primary" onClick={saveProduct}><Save size={16} /> {editingProductId ? 'تحديث' : 'إضافة'}</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
             {/* Category Modal */}
             {showCategoryModal && (
