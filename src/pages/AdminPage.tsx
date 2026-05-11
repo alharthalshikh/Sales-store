@@ -1512,7 +1512,7 @@ export default function AdminPage() {
             {/* Product Modal */}
             {showProductModal && (
                 <div className="modal-overlay" onClick={() => setShowProductModal(false)}>
-                    <div className="modal modal-large" onClick={e => e.stopPropagation()}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>{editingProductId ? '✏️ تعديل المنتج' : '➕ إضافة منتج جديد'}</h2>
                             <button className="nav-icon-btn" onClick={() => setShowProductModal(false)}><X size={20} /></button>
@@ -1871,7 +1871,7 @@ export default function AdminPage() {
             {/* Discount Modal */}
             {showDiscountModal && (
                 <div className="modal-overlay" onClick={() => setShowDiscountModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>{editingDiscountId ? 'تعديل التخفيض' : 'إضافة تخفيض جديد'}</h2>
                             <button className="nav-icon-btn" onClick={() => setShowDiscountModal(false)}><X size={20} /></button>
@@ -1939,7 +1939,7 @@ export default function AdminPage() {
             {/* Review Reply Modal */}
             {showReviewModal && currentReview && (
                 <div className="modal-overlay" onClick={() => setShowReviewModal(false)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h2>الرد على التقييم (من {currentReview.customerName})</h2>
                             <button className="nav-icon-btn" onClick={() => setShowReviewModal(false)}><X size={20} /></button>
