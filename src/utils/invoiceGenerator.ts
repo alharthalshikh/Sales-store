@@ -32,9 +32,10 @@ export function generateInvoicePDF(order: Order, settings: StoreSettings) {
     if (storeLogo) {
         if (storeLogo.startsWith('<svg')) {
             logoHtml = `<div style="width:50px; height:50px; display:flex; align-items:center; justify-content:center;">${storeLogo}</div>`;
-        } else if (storeLogo.startsWith('http')) {
+        } else if (storeLogo.startsWith('http') || storeLogo.startsWith('/') || storeLogo.startsWith('data:image')) {
             logoHtml = `<img src="${storeLogo}" alt="Logo" style="width:60px; height:60px; border-radius:12px; object-fit:contain; background:#fff; padding:5px;" />`;
         } else {
+            // إذا كان إيموجي أو نص قصير
             logoHtml = `<span style="font-size:2.5rem;">${storeLogo}</span>`;
         }
     }
