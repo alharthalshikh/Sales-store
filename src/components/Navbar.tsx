@@ -16,26 +16,40 @@ export default function Navbar() {
     const themeMenuRef = React.useRef<HTMLDivElement>(null);
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);
+    const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
-    // الحد الأدنى للسحب ليتم اعتباره "سحبة إغلاق"
-    const minSwipeDistance = 50;
+    // الحد الأدنى للسحب ليتم اعتباره "سحبة إغلاق" - جعلناه أقوى (100)
+    const minSwipeDistance = 100;
 
     const onTouchStart = (e: React.TouchEvent) => {
         setTouchEnd(null);
         setTouchStart(e.targetTouches[0].clientY);
+        setTouchStartX(e.targetTouches[0].clientX);
     };
 
     const onTouchMove = (e: React.TouchEvent) => {
         setTouchEnd(e.targetTouches[0].clientY);
     };
 
-    const onTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        const isSwipeDown = distance < -minSwipeDistance;
-        if (isSwipeDown) {
+    const onTouchEnd = (e: React.TouchEvent) => {
+        if (!touchStart || !touchEnd || !touchStartX) return;
+        
+        const distanceY = touchStart - touchEnd;
+        const distanceX = Math.abs(touchStartX - e.changedTouches[0].clientX);
+        
+        // التأكد أن السحب للأسفل وبشكل طولي وليس عرضي
+        const isSwipeDown = distanceY < -minSwipeDistance && distanceX < 50;
+        
+        // لا تغلق إلا إذا كان المستخدم في أعلى القائمة تماماً
+        const isAtTop = e.currentTarget.scrollTop <= 0;
+
+        if (isSwipeDown && isAtTop) {
             dispatch({ type: 'SET_MOBILE_MENU_OPEN', isOpen: false });
         }
+        
+        setTouchStart(null);
+        setTouchEnd(null);
+        setTouchStartX(null);
     };
 
 
