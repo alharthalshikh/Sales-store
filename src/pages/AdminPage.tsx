@@ -413,7 +413,6 @@ export default function AdminPage() {
                 )}
 
                 <div className="admin-stats">
-                    {[
                         { label: 'إجمالي المبيعات', value: `${totalRevenue.toFixed(0)} ${s.currencySymbol} `, icon: '💰' },
                         { label: 'عدد الطلبات', value: state.orders.length, icon: '📦' },
                         { label: 'طلبات معلقة', value: pendingOrdersCount, icon: '⏳' },
@@ -1423,7 +1422,16 @@ export default function AdminPage() {
 
     return (
         <div className="admin-layout">
-            {/* Sidebar */}
+            {/* زر العودة للمتجر في الجوال */}
+            <button
+                className="mobile-back-btn"
+                onClick={() => navigate('/')}
+                title="العودة للمتجر"
+            >
+                <Home size={20} />
+            </button>
+
+            {/* Sidebar (Hidden on mobile, replaced by bottom nav) */}
             <aside className="admin-sidebar">
                 <div style={{ marginBottom: '24px', textAlign: 'center', padding: '10px 0' }}>
                     <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -1457,6 +1465,33 @@ export default function AdminPage() {
                     <LogOut size={16} /> تسجيل الخروج
                 </button>
             </aside>
+            
+            {/* Mobile Bottom Navigation */}
+            <nav className="admin-mobile-nav">
+                {tabs.slice(0, 5).map(tab => (
+                    <button 
+                        key={tab.id} 
+                        className={`admin-mobile-nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                        onClick={() => setActiveTab(tab.id)}
+                    >
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                        {tab.badge !== undefined && tab.badge > 0 && (
+                            <span className="badge">{tab.badge}</span>
+                        )}
+                    </button>
+                ))}
+                <button 
+                    className="admin-mobile-nav-item"
+                    onClick={() => {
+                        const nextIndex = (tabs.findIndex(t => t.id === activeTab) + 1) % tabs.length;
+                        setActiveTab(tabs[nextIndex].id);
+                    }}
+                >
+                    <Menu size={20} />
+                    <span>المزيد</span>
+                </button>
+            </nav>
 
             {/* Main Content */}
             <main className="admin-content">
