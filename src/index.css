@@ -2483,10 +2483,12 @@ ol {
 
   /* Modals on Mobile */
   .modal {
-    width: 95% !important;
-    max-width: none !important;
-    margin: 10px auto;
-    max-height: 95vh;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
   }
 
   .modal-content {
@@ -2524,4 +2526,25 @@ ol {
   .stat-card-label {
     font-size: 0.75rem !important;
   }
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
