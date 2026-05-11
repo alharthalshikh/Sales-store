@@ -1422,6 +1422,7 @@ export default function AdminPage() {
     };
 
     return (
+        <>
         <div className="admin-layout">
             {/* زر العودة للمتجر في الجوال */}
             <button
@@ -1504,8 +1505,9 @@ export default function AdminPage() {
                 </div>
                 {renderContent()}
             </main>
+        </div>
 
-            {/* ================== MODALS ================== */}
+        {/* ================== MODALS ================== */}
 
             {/* Product Modal */}
             {showProductModal && (
@@ -1977,6 +1979,6 @@ export default function AdminPage() {
                 confirmText="نعم، متأكد"
                 cancelText="إلغاء"
             />
-        </div>
+        </>
     );
 }
