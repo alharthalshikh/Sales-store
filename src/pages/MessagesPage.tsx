@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Trash2 } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
 import ConfirmModal from '../components/ConfirmModal';
@@ -159,7 +159,16 @@ export default function MessagesPage() {
                                             <div className="chat-bubble">
                                                 <div className="chat-bubble-sender">{msg.isFromAdmin ? s.storeName : msg.senderName}</div>
                                                 <div className="chat-bubble-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-                                                <div className="chat-bubble-time">{formatDate(msg.createdAt)}</div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <div className="chat-bubble-time">{formatDate(msg.createdAt)}</div>
+                                                    <button 
+                                                        onClick={() => { if(window.confirm('حذف هذه الرسالة من عندك؟')) dispatch({ type: 'DELETE_MESSAGE', messageId: msg.id }); }}
+                                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: '0 4px', opacity: 0.6 }}
+                                                        title="مسح من عندي"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))

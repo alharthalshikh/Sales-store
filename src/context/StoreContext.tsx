@@ -318,31 +318,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     break;
                 case 'DELETE_MESSAGE':
                     if (isAdmin) {
-                        // المدير يحذف نهائياً من القاعدة
                         await deleteDoc(doc(db, 'messages', action.messageId));
                     } else {
-                        // المستخدم يخفيها من عنده فقط (تحديث حقل في القاعدة)
                         await updateDoc(doc(db, 'messages', action.messageId), { deleted_by_user: true });
                     }
                     break;
                 case 'CLEAR_USER_MESSAGES': {
-                    const q = action.userId 
-                        ? query(collection(db, 'messages'), where('user_id', '==', action.userId))
-                        : query(collection(db, 'messages'), where('contact_info', '==', action.phone));
-                    const snap = await getDocs(q);
+                    const msgsSnap = await getDocs(collection(db, 'messages'));
                     const batch = writeBatch(db);
-                    snap.docs.forEach(d => {
-                        if (isAdmin) {
-                            batch.delete(d.ref); // حذف نهائي للمدير
-                        } else {
-                            batch.update(d.ref, { deleted_by_user: true }); // إخفاء للمستخدم
+                    msgsSnap.docs.forEach(d => {
+                        const data = d.data();
+                        const matchesUser = (action.userId && data.user_id === action.userId);
+                        const matchesPhone = (action.phone && (data.contact_info === action.phone || data.name === action.phone));
+                        
+                        if (matchesUser || matchesPhone) {
+                            if (isAdmin) {
+                                batch.delete(d.ref); // مسح نهائي للطرفين
+                            } else {
+                                batch.update(d.ref, { deleted_by_user: true }); // إخفاء للمستخدم فقط
+                            }
                         }
                     });
                     await batch.commit();
-                    break;
-                }
-                case 'CLEAR_MESSAGES': {
-                    if (isAdmin) await clearCollection('messages');
                     break;
                 }
                 case 'ADD_REVIEW':
@@ -387,19 +384,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'DELETE_BANNER':
                     await deleteDoc(doc(db, 'banners', action.bannerId));
                     break;
-                case 'CLEAR_USER_MESSAGES': {
-                    const msgsSnap = await getDocs(collection(db, 'messages'));
-                    const batch = writeBatch(db);
-                    msgsSnap.docs.forEach(d => {
-                        const data = d.data();
-                        if ((action.userId && data.user_id === action.userId) ||
-                            (action.phone && data.contact_info === action.phone)) {
-                            batch.delete(d.ref);
-                        }
-                    });
-                    await batch.commit();
-                    break;
-                }
                 case 'ADD_REWARD':
                 case 'UPDATE_REWARD':
                     await setDoc(doc(db, 'rewards', action.reward.id), rewardToDb(action.reward));

@@ -944,9 +944,28 @@ export default function AdminPage() {
                             </div>
                             <div style={{ flex: 1, padding: 16, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '500px', direction: 'ltr' }}>
                                 {activeChat.map(msg => (
-                                    <div key={msg.id} style={{ alignSelf: msg.isFromAdmin ? 'flex-end' : 'flex-start', maxWidth: '70%', background: msg.isFromAdmin ? 'var(--accent)' : 'var(--bg)', color: msg.isFromAdmin ? '#fff' : 'var(--text)', borderRadius: 12, padding: '10px 14px', fontSize: '0.9rem', direction: 'rtl' }}>
+                                    <div key={msg.id} className="admin-msg-bubble" style={{ 
+                                        alignSelf: msg.isFromAdmin ? 'flex-end' : 'flex-start', 
+                                        maxWidth: '70%', 
+                                        background: msg.isFromAdmin ? 'var(--accent)' : 'var(--bg)', 
+                                        color: msg.isFromAdmin ? '#fff' : 'var(--text)', 
+                                        borderRadius: 12, 
+                                        padding: '10px 14px', 
+                                        fontSize: '0.9rem', 
+                                        direction: 'rtl',
+                                        position: 'relative'
+                                    }}>
                                         {msg.content}
-                                        <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4 }}>{formatDate(msg.createdAt)}</div>
+                                        <div style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span>{formatDate(msg.createdAt)}</span>
+                                            <button 
+                                                onClick={() => { if(window.confirm('حذف هذه الرسالة للطرفين؟')) dispatch({ type: 'DELETE_MESSAGE', messageId: msg.id }); }}
+                                                style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: '0 4px', opacity: 0.5 }}
+                                                title="حذف للطرفين"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                                 <div ref={chatEndRef} />
