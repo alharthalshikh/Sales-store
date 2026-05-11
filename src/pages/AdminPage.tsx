@@ -833,9 +833,6 @@ export default function AdminPage() {
     );
 
 
-    const chatEndRef = useRef<HTMLDivElement>(null);
-    const isFirstChatLoad = useRef(true);
-
     // تحديث الرسائل كـ "مقروءة" تلقائياً عند فتح المحادثة ووصول رسائل جديدة
     useEffect(() => {
         if (selectedChatPhone) {
