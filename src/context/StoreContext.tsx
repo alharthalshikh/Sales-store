@@ -387,16 +387,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'DELETE_BANNER':
                     await deleteDoc(doc(db, 'banners', action.bannerId));
                     break;
-                case 'CLEAR_USER_MESSAGES': {
-                    const msgsSnap = await getDocs(collection(db, 'messages'));
-                    const batch = writeBatch(db);
-                    msgsSnap.docs.forEach(d => {
-                        const data = d.data();
-                        if ((action.userId && data.user_id === action.userId) ||
-                            (action.phone && data.contact_info === action.phone)) {
-                            batch.delete(d.ref);
-                        }
-                    });
                     await batch.commit();
                     break;
                 }
