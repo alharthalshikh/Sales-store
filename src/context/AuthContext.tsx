@@ -302,15 +302,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(firebaseUser);
                 await checkAdmin(firebaseUser.uid, firebaseUser.email || '');
 
-                // مراقبة تغييرات الحظر في الوقت الفعلي عبر Firestore
+                // مراقبة تغييرات الملف الشخصي في الوقت الفعلي عبر Firestore (الرتبة + الحظر)
                 const userRef = doc(db, 'users', firebaseUser.uid);
                 profileUnsubscribe = onSnapshot(userRef, (snapshot) => {
                     if (snapshot.exists()) {
                         const data = snapshot.data();
-                        if (data.is_suspended) {
-                            setIsBanned(true);
+                        
+                        // مراقبة الحظر
+                        setIsBanned(!!data.is_suspended);
+                        
+                        // مراقبة تغييرات الرتبة في الوقت الفعلي
+                        const currentRole = data.role || 'customer';
+                        setRole(currentRole);
+                        setUserData({ id: snapshot.id, ...data });
+                        
+                        const isMaster = firebaseUser.email === MASTER_ADMIN_EMAIL;
+                        const isUserAdmin = currentRole === 'admin' || currentRole === 'moderator';
+                        setIsAdmin(isUserAdmin || isMaster);
+                        
+                        if (isUserAdmin || isMaster) {
+                            setAdminName(data.name || 'مدير');
+                            setAdminEmail(firebaseUser.email || '');
+                            localStorage.setItem('admin-fallback', JSON.stringify({
+                                email: firebaseUser.email,
+                                name: data.name || 'مدير',
+                                role: currentRole
+                            }));
                         } else {
-                            setIsBanned(false);
+                            localStorage.removeItem('admin-fallback');
                         }
                     }
                 });
