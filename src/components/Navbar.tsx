@@ -14,6 +14,29 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [showThemeMenu, setShowThemeMenu] = useState(false);
     const themeMenuRef = React.useRef<HTMLDivElement>(null);
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+    // الحد الأدنى للسحب ليتم اعتباره "سحبة إغلاق"
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientY);
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientY);
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isSwipeDown = distance < -minSwipeDistance;
+        if (isSwipeDown) {
+            dispatch({ type: 'SET_MOBILE_MENU_OPEN', isOpen: false });
+        }
+    };
 
 
     useEffect(() => {
@@ -166,12 +189,16 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* Mobile Menu */}
             <div
                 className={`mobile-menu-overlay ${state.isMobileMenuOpen ? 'open' : ''}`}
                 onClick={() => dispatch({ type: 'SET_MOBILE_MENU_OPEN', isOpen: false })}
             />
-            <div className={`mobile-menu ${state.isMobileMenuOpen ? 'open' : ''}`}>
+            <div className={`mobile-menu-sheet ${state.isMobileMenuOpen ? 'open' : ''}`}
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+            >
+                <div className="sheet-handle" onClick={() => dispatch({ type: 'SET_MOBILE_MENU_OPEN', isOpen: false })} />
                 <div className="mobile-menu-header">
                     <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 8 }}>
                         {renderLogo(settings.storeLogo, "", { width: 28, height: 28 })} {settings.storeName}
