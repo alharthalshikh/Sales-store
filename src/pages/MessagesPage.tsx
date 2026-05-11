@@ -83,6 +83,8 @@ export default function MessagesPage() {
     // فلترة الرسائل للحصول على المحادثة الخاصة بهذا المستخدم فقط
     const userMessages = state.messages
         .filter(m => {
+            // إخفاء الرسائل المحذوفة من طرف المستخدم
+            if (m.deletedByUser) return false;
             if (user) return m.userId === user.uid || (m.senderPhone === userData?.phone && !m.userId);
             return m.senderPhone === senderPhone || m.senderName === senderName;
         })
