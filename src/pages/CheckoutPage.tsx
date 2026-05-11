@@ -63,18 +63,36 @@ export default function CheckoutPage() {
     const reverseGeocode = async (lat: number, lng: number) => {
         setLoadingAddress(true);
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ar`);
+            // المحاولة الأولى: Nominatim مع User-Agent
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ar`,
+                { headers: { 'User-Agent': 'SalesStore/1.0' } }
+            );
             const data = await response.json();
             if (data && data.display_name) {
-                // نأخذ الجزء الأول من العنوان ليكون أكثر اختصاراً إذا فضل المستخدم ذلك، 
-                // أو العنوان كاملاً. هنا سنأخذ العنوان كاملاً.
                 setForm(prev => ({ ...prev, address: data.display_name }));
+                setLoadingAddress(false);
+                return;
             }
-        } catch (error) {
-            // console.error('Reverse geocoding error:', error);
-        } finally {
-            setLoadingAddress(false);
-        }
+        } catch (e) { /* fallback */ }
+
+        try {
+            // المحاولة الثانية: BigDataCloud (بدون مفتاح API)
+            const res2 = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=ar`);
+            const d2 = await res2.json();
+            if (d2) {
+                const parts = [d2.locality, d2.city, d2.principalSubdivision, d2.countryName].filter(Boolean);
+                if (parts.length > 0) {
+                    setForm(prev => ({ ...prev, address: parts.join('، ') }));
+                    setLoadingAddress(false);
+                    return;
+                }
+            }
+        } catch (e) { /* fallback */ }
+
+        // الملاذ الأخير: استخدام الإحداثيات كعنوان
+        setForm(prev => ({ ...prev, address: `موقع GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}` }));
+        setLoadingAddress(false);
     };
 
     const handleGetLocation = (map?: any, m?: any) => {
@@ -331,19 +349,61 @@ export default function CheckoutPage() {
                         <div className="form-group"><label>رقم الهاتف *</label><input type="tel" placeholder="05xxxxxxxx" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required dir="ltr" /></div>
                         <div className="form-group">
                             <label>العنوان السكني *</label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type="text"
-                                    placeholder="أو سيتم تحديده تلقائياً من الخريطة..."
-                                    value={form.address}
-                                    onChange={e => setForm({ ...form, address: e.target.value })}
-                                    required
-                                />
-                                {loadingAddress && (
-                                    <div style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--accent)' }}>
-                                        جاري جلب العنوان...
-                                    </div>
-                                )}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <div style={{ flex: 1, position: 'relative' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="أدخل عنوانك أو اضغط تحديد موقعي..."
+                                        value={form.address}
+                                        onChange={e => setForm({ ...form, address: e.target.value })}
+                                        required
+                                    />
+                                    {loadingAddress && (
+                                        <div style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--accent)' }}>
+                                            جاري جلب العنوان...
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (navigator.geolocation) {
+                                            setLoadingAddress(true);
+                                            navigator.geolocation.getCurrentPosition(
+                                                (pos) => {
+                                                    const { latitude, longitude } = pos.coords;
+                                                    updateLocation(latitude, longitude);
+                                                    showToast('تم تحديد موقعك وعنوانك تلقائياً 📍', 'success');
+                                                },
+                                                (err) => {
+                                                    setLoadingAddress(false);
+                                                    if (err.code === 1) {
+                                                        showToast('يرجى السماح بإذن الموقع في المتصفح', 'error');
+                                                    } else {
+                                                        showToast('تعذر تحديد الموقع، أدخل العنوان يدوياً', 'error');
+                                                    }
+                                                },
+                                                { timeout: 10000, enableHighAccuracy: true }
+                                            );
+                                        } else {
+                                            showToast('متصفحك لا يدعم تحديد الموقع', 'error');
+                                        }
+                                    }}
+                                    disabled={loadingAddress}
+                                    className="btn btn-secondary"
+                                    style={{
+                                        whiteSpace: 'nowrap',
+                                        padding: '10px 14px',
+                                        fontSize: '0.85rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        opacity: loadingAddress ? 0.6 : 1,
+                                    }}
+                                >
+                                    <Navigation size={16} />
+                                    {loadingAddress ? '...' : 'موقعي'}
+                                </button>
                             </div>
                         </div>
 
