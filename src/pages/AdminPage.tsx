@@ -53,6 +53,7 @@ export default function AdminPage() {
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
     const [productForm, setProductForm] = useState<Partial<Product>>({ ...emptyProduct });
     const [tagsInput, setTagsInput] = useState('');
+    const [adminProductCategory, setAdminProductCategory] = useState<string | null>(null);
 
     // Category states
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -231,7 +232,10 @@ export default function AdminPage() {
     // PRODUCT CRUD
     // ====================================================
     const openAddProduct = () => {
-        setProductForm({ ...emptyProduct, categoryId: state.categories[0]?.id || '' });
+        setProductForm({ 
+            ...emptyProduct, 
+            categoryId: adminProductCategory || state.categories[0]?.id || '' 
+        });
         setEditingProductId(null);
         setTagsInput('');
         setShowProductModal(true);
@@ -713,60 +717,112 @@ export default function AdminPage() {
                     </div>
                 )}
 
+                {adminProductCategory && (
+                    <button 
+                        className="btn btn-secondary btn-small" 
+                        onClick={() => setAdminProductCategory(null)}
+                        style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                        <X size={14} /> العودة لكل الأقسام
+                    </button>
+                )}
+
                 <div className="admin-section-header">
-                    <h3>🛍️ إدارة المنتجات ({state.products.length})</h3>
+                    <h3>
+                        🛍️ {adminProductCategory 
+                            ? `إدارة منتجات: ${state.categories.find(c => c.id === adminProductCategory)?.name} (${state.products.filter(p => p.categoryId === adminProductCategory).length})` 
+                            : `إدارة المنتجات حسب القسم (${state.products.length})`
+                        }
+                    </h3>
                     <button className="btn btn-primary" onClick={openAddProduct}><Plus size={18} /> إضافة منتج</button>
                 </div>
-                {state.products.length === 0 ? (
-                    <div className="empty-state">لا توجد منتجات حالياً. أضف منتجك الأول!</div>
-                ) : (
-                    <div className="admin-table-container">
-                        <table className="admin-table">
-                            <thead><tr><th>الصورة</th><th>المنتج</th><th>القسم</th><th>السعر</th><th>المخزون</th><th>الحالة</th><th>مميز</th><th>إجراءات</th></tr></thead>
-                            <tbody>
-                                {state.products.map(p => {
-                                    const qty = p.stockQuantity ?? 0;
-                                    const threshold = p.lowStockThreshold ?? 5;
-                                    const stockColor = qty <= 0 ? '#f44336' : qty <= threshold ? '#FF9800' : '#4CAF50';
-                                    return (
-                                        <tr key={p.id} style={{ opacity: qty <= 0 ? 0.7 : 1 }}>
-                                            <td><img src={p.image} alt="" style={{ width: 50, height: 50, borderRadius: 8, objectFit: 'cover' }} /></td>
-                                            <td style={{ fontWeight: 600 }}>{p.name}</td>
-                                            <td>{state.categories.find(c => c.id === p.categoryId)?.icon} {state.categories.find(c => c.id === p.categoryId)?.name}</td>
-                                            <td>
-                                                <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{p.price} {s.currencySymbol}</span>
-                                                {p.originalPrice && <span style={{ textDecoration: 'line-through', color: 'var(--text-light)', marginRight: 8, fontSize: '0.8rem' }}>{p.originalPrice}</span>}
-                                            </td>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{
-                                                        background: `${stockColor}18`, color: stockColor, fontWeight: 800,
-                                                        padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem',
-                                                        border: `1px solid ${stockColor}40`, minWidth: '36px', textAlign: 'center',
-                                                    }}>{qty}</span>
-                                                    {qty <= 0 && <span style={{ fontSize: '0.7rem', color: '#f44336' }}>نفد!</span>}
-                                                    {qty > 0 && qty <= threshold && <span style={{ fontSize: '0.7rem', color: '#FF9800' }}>منخفض</span>}
-                                                </div>
-                                            </td>
-                                            <td><span className={`status-badge ${qty > 0 ? 'status-confirmed' : 'status-cancelled'}`}>{qty > 0 ? 'متوفر' : 'نفد'}</span></td>
-                                            <td>{p.featured ? '⭐' : '—'}</td>
-                                            <td>
-                                                <div style={{ display: 'flex', gap: 6 }}>
-                                                    <button className="btn btn-secondary btn-small" onClick={() => openEditProduct(p)}><Edit size={14} /></button>
-                                                    <button className="btn btn-danger btn-small" onClick={() => {
-                                                        confirmAction('حذف منتج', 'حذف هذا المنتج؟', () => {
-                                                            dispatch({ type: 'DELETE_PRODUCT', productId: p.id });
-                                                            showToast('تم الحذف', 'warning');
-                                                        });
-                                                    }}><Trash2 size={14} /></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
+
+                {!adminProductCategory ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+                        {state.categories.map(cat => {
+                            const count = state.products.filter(p => p.categoryId === cat.id).length;
+                            return (
+                                <div 
+                                    key={cat.id} 
+                                    onClick={() => setAdminProductCategory(cat.id)}
+                                    style={{ 
+                                        background: 'var(--surface)', 
+                                        border: '1px solid var(--border)', 
+                                        borderRadius: 20, 
+                                        padding: 24, 
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        textAlign: 'center'
+                                    }}
+                                    className="category-card-admin"
+                                >
+                                    <div style={{ fontSize: '3rem', marginBottom: 12 }}>{cat.icon}</div>
+                                    <div style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: 4 }}>{cat.name}</div>
+                                    <div style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 700 }}>
+                                        {count} منتجات
+                                    </div>
+                                    <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--text-light)' }}>
+                                        اضغط لعرض المنتجات وإدارتها
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
+                ) : (
+                    <>
+                        {state.products.filter(p => p.categoryId === adminProductCategory).length === 0 ? (
+                            <div className="empty-state">لا توجد منتجات في هذا القسم حالياً.</div>
+                        ) : (
+                            <div className="admin-table-container">
+                                <table className="admin-table">
+                                    <thead><tr><th>الصورة</th><th>المنتج</th><th>السعر</th><th>المخزون</th><th>الحالة</th><th>مميز</th><th>إجراءات</th></tr></thead>
+                                    <tbody>
+                                        {state.products
+                                            .filter(p => p.categoryId === adminProductCategory)
+                                            .map(p => {
+                                                const qty = p.stockQuantity ?? 0;
+                                                const threshold = p.lowStockThreshold ?? 5;
+                                                const stockColor = qty <= 0 ? '#f44336' : qty <= threshold ? '#FF9800' : '#4CAF50';
+                                                return (
+                                                    <tr key={p.id} style={{ opacity: qty <= 0 ? 0.7 : 1 }}>
+                                                        <td><img src={p.image} alt="" style={{ width: 50, height: 50, borderRadius: 8, objectFit: 'cover' }} /></td>
+                                                        <td style={{ fontWeight: 600 }}>{p.name}</td>
+                                                        <td>
+                                                            <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{p.price} {s.currencySymbol}</span>
+                                                            {p.originalPrice && <span style={{ textDecoration: 'line-through', color: 'var(--text-light)', marginRight: 8, fontSize: '0.8rem' }}>{p.originalPrice}</span>}
+                                                        </td>
+                                                        <td>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                                <span style={{
+                                                                    background: `${stockColor}18`, color: stockColor, fontWeight: 800,
+                                                                    padding: '4px 10px', borderRadius: '8px', fontSize: '0.85rem',
+                                                                    border: `1px solid ${stockColor}40`, minWidth: '36px', textAlign: 'center',
+                                                                }}>{qty}</span>
+                                                                {qty <= 0 && <span style={{ fontSize: '0.7rem', color: '#f44336' }}>نفد!</span>}
+                                                                {qty > 0 && qty <= threshold && <span style={{ fontSize: '0.7rem', color: '#FF9800' }}>منخفض</span>}
+                                                            </div>
+                                                        </td>
+                                                        <td><span className={`status-badge ${qty > 0 ? 'status-confirmed' : 'status-cancelled'}`}>{qty > 0 ? 'متوفر' : 'نفد'}</span></td>
+                                                        <td>{p.featured ? '⭐' : '—'}</td>
+                                                        <td>
+                                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                                <button className="btn btn-secondary btn-small" onClick={() => openEditProduct(p)}><Edit size={14} /></button>
+                                                                <button className="btn btn-danger btn-small" onClick={() => {
+                                                                    confirmAction('حذف منتج', 'حذف هذا المنتج؟', () => {
+                                                                        dispatch({ type: 'DELETE_PRODUCT', productId: p.id });
+                                                                        showToast('تم الحذف', 'warning');
+                                                                    });
+                                                                }}><Trash2 size={14} /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         )

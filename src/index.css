@@ -97,10 +97,18 @@ body.light-mode {
 [data-theme="light"] .auth-card-new,
 [data-theme="light"] .modal-content,
 [data-theme="light"] .category-card,
+[data-theme="light"] .category-card-admin,
 [data-theme="light"] .feature-card {
   background: #ffffff !important;
   border: 1px solid rgba(197, 160, 89, 0.05) !important;
   box-shadow: var(--shadow-lg) !important;
+}
+
+.category-card-admin:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent) !important;
+  box-shadow: var(--shadow-glow) !important;
+  background: var(--surface-hover) !important;
 }
 
 [data-theme="light"] input,
