@@ -132,7 +132,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
                 {category && (
                     <div className="product-card-category">{category.icon} {category.name}</div>
                 )}
-                <Link to={`/products?category=${product.categoryId}&highlight=${product.id}`}>
+                <Link to={`/product/${product.id}`}>
                     <h3 className="product-card-name">{product.name}</h3>
                 </Link>
                 <div className="product-card-rating">
