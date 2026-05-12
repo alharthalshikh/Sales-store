@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Heart, ShoppingCart, Eye } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { Product } from '../types';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
@@ -111,9 +111,6 @@ export default function ProductCard({ product, index = 0 }: Props) {
                     >
                         <Heart size={18} fill={isFavorite ? 'white' : 'none'} />
                     </button>
-                    <Link to={`/product/${product.id}`} className="product-action-btn" title="عرض التفاصيل">
-                        <Eye size={18} />
-                    </Link>
                 </div>
                 {(product.stockQuantity ?? 1) <= 0 && (
                     <div style={{
