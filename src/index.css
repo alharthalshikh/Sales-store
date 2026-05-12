@@ -1009,14 +1009,10 @@ ol {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  opacity: 0;
-  transform: translateX(-10px);
-  transition: var(--transition);
-}
-
-.product-card:hover .product-card-actions {
   opacity: 1;
-  transform: translateX(0);
+  transform: none;
+  transition: var(--transition);
+  z-index: 10;
 }
 
 .product-action-btn {
@@ -1055,6 +1051,7 @@ ol {
   font-weight: 700;
   border-radius: 50px;
   animation: pulse 2s infinite;
+  z-index: 10;
 }
 
 .product-card-body {
