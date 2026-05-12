@@ -50,6 +50,10 @@ export default function ProductsPage() {
     }, [activeCategory, searchQuery, sortBy, state.products]);
 
     React.useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [activeCategory]);
+
+    React.useEffect(() => {
         const highlightId = searchParams.get('highlight');
         if (highlightId) {
             setTimeout(() => {
