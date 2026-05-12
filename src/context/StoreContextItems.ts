@@ -84,9 +84,9 @@ export type StoreAction =
     | { type: 'ADD_CATEGORY'; category: Category }
     | { type: 'UPDATE_CATEGORY'; category: Category }
     | { type: 'DELETE_CATEGORY'; categoryId: string }
-    | { type: 'ADD_TO_CART'; product: Product; quantity?: number }
-    | { type: 'REMOVE_FROM_CART'; productId: string }
-    | { type: 'UPDATE_QUANTITY'; productId: string; quantity: number }
+    | { type: 'ADD_TO_CART'; product: Product; quantity?: number; selectedVariant?: import('../types').ProductVariant }
+    | { type: 'REMOVE_FROM_CART'; productId: string; variantId?: string }
+    | { type: 'UPDATE_QUANTITY'; productId: string; quantity: number; variantId?: string }
     | { type: 'CLEAR_CART' }
     | { type: 'TOGGLE_FAVORITE'; productId: string }
     | { type: 'ADD_ORDER'; order: Order }
@@ -112,7 +112,7 @@ export type StoreAction =
     | { type: 'ADD_REWARD'; reward: LoyaltyReward }
     | { type: 'UPDATE_REWARD'; reward: LoyaltyReward }
     | { type: 'DELETE_REWARD'; rewardId: string }
-    | { type: 'DEDUCT_STOCK'; items: { productId: string; quantity: number }[] }
+    | { type: 'DEDUCT_STOCK'; items: { productId: string; quantity: number; variantId?: string }[] }
     | { type: 'TOGGLE_CART' }
     | { type: 'TOGGLE_MOBILE_MENU' }
     | { type: 'SET_CART_OPEN'; isOpen: boolean }
@@ -136,7 +136,7 @@ export interface StoreContextType {
     cartTotal: number;
     cartCount: number;
     getAppliedDiscount: (product: Product) => number;
-    getFinalPrice: (product: Product) => number;
+    getFinalPrice: (product: Product, variantPrice?: number) => number;
 }
 
 export const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -231,6 +231,7 @@ export function dbToProduct(row: any): Product {
         featured: row.featured ?? false,
         rating: Number(row.rating) || 5,
         reviewCount: row.review_count || 0,
+        variants: row.variants || [],
     };
 }
 
@@ -242,6 +243,7 @@ export function productToDb(p: Product) {
         weight: p.weight, tags: p.tags || [], specifications: p.specifications || {},
         in_stock: p.inStock, stock_quantity: p.stockQuantity ?? 0, low_stock_threshold: p.lowStockThreshold ?? 5,
         featured: p.featured, rating: p.rating, review_count: p.reviewCount,
+        variants: p.variants || [],
     };
 }
 
@@ -472,8 +474,9 @@ export function discountToDb(r: DiscountRule) {
     };
 }
 
-export function getFinalPriceCalc(product: Product, discountRules: DiscountRule[]): number {
-    if (product.originalPrice && product.discount) return product.price;
+export function getFinalPriceCalc(product: Product, discountRules: DiscountRule[], variantPrice?: number): number {
+    const basePrice = variantPrice ?? product.price;
+    if (product.originalPrice && product.discount && !variantPrice) return product.price;
     const now = Date.now();
     const applicableRules = discountRules.filter(rule => {
         if (!rule.active) return false;
@@ -483,12 +486,12 @@ export function getFinalPriceCalc(product: Product, discountRules: DiscountRule[
         if (rule.productIds && !rule.productIds.includes(product.id)) return false;
         return true;
     });
-    if (applicableRules.length === 0) return product.price;
+    if (applicableRules.length === 0) return basePrice;
     const bestRule = applicableRules.reduce((best, rule) => {
-        const discount = rule.type === 'percentage' ? (product.price * rule.value) / 100 : rule.value;
-        const bestDiscount = best.type === 'percentage' ? (product.price * best.value) / 100 : best.value;
+        const discount = rule.type === 'percentage' ? (basePrice * rule.value) / 100 : rule.value;
+        const bestDiscount = best.type === 'percentage' ? (basePrice * best.value) / 100 : best.value;
         return discount > bestDiscount ? rule : best;
     });
-    const discountAmount = bestRule.type === 'percentage' ? (product.price * bestRule.value) / 100 : bestRule.value;
-    return Math.max(0, product.price - discountAmount);
+    const discountAmount = bestRule.type === 'percentage' ? (basePrice * bestRule.value) / 100 : bestRule.value;
+    return Math.max(0, basePrice - discountAmount);
 }

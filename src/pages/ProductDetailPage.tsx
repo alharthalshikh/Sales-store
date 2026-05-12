@@ -14,6 +14,7 @@ export default function ProductDetailPage() {
     const product = state.products.find(p => p.id === id);
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
+    const [selectedVariant, setSelectedVariant] = useState<import('../types').ProductVariant | null>(null);
 
     const allImages = product ? [product.image, ...(product.images || [])].filter(Boolean) : [];
 
@@ -63,6 +64,8 @@ export default function ProductDetailPage() {
     const discount = getAppliedDiscount(product);
     const finalPrice = getFinalPrice(product);
     const relatedProducts = state.products.filter(p => p.categoryId === product.categoryId && p.id !== product.id).slice(0, 4);
+    const hasVariants = product.variants && product.variants.length > 0;
+    const activePrice = selectedVariant ? selectedVariant.price : finalPrice;
 
     // حساب متوسط التقييم الفعلي من البيانات العامة
     const avgRating = reviews.length > 0
@@ -92,15 +95,19 @@ export default function ProductDetailPage() {
     const handleAddToCart = () => {
         if (!user) {
             showToast('يرجى تسجيل الدخول لإضافة المنتجات للسلة', 'error');
-            // Using a delay or letting the toast show before redirect
             setTimeout(() => {
                 window.location.href = '/login';
             }, 1000);
             return;
         }
-        dispatch({ type: 'ADD_TO_CART', product, quantity });
+        if (hasVariants && !selectedVariant) {
+            showToast('يرجى اختيار الحجم/النوع أولاً', 'error');
+            return;
+        }
+        dispatch({ type: 'ADD_TO_CART', product, quantity, selectedVariant: selectedVariant || undefined });
         dispatch({ type: 'SET_CART_OPEN', isOpen: true });
-        showToast(`تمت إضافة ${product.name} إلى السلة`, 'success');
+        const variantLabel = selectedVariant ? ` (${selectedVariant.name})` : '';
+        showToast(`تمت إضافة ${product.name}${variantLabel} إلى السلة`, 'success');
     };
 
     const handleToggleFavorite = () => {
@@ -247,10 +254,61 @@ export default function ProductDetailPage() {
                         </div>
 
                         <div className="price-section">
-                            <span className="price-current">{finalPrice.toFixed(0)} {s.currencySymbol}</span>
-                            {product.originalPrice && <span className="price-original">{product.originalPrice.toFixed(0)} {s.currencySymbol}</span>}
+                            {hasVariants ? (
+                                <>
+                                    {selectedVariant ? (
+                                        <span className="price-current">{selectedVariant.price.toFixed(0)} {s.currencySymbol}</span>
+                                    ) : (
+                                        <>
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>يبدأ من</span>
+                                            <span className="price-current">{Math.min(...product.variants!.map(v => v.price)).toFixed(0)} {s.currencySymbol}</span>
+                                        </>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <span className="price-current">{finalPrice.toFixed(0)} {s.currencySymbol}</span>
+                                    {product.originalPrice && <span className="price-original">{product.originalPrice.toFixed(0)} {s.currencySymbol}</span>}
+                                </>
+                            )}
                             {product.weight && <span style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>/ {product.weight}</span>}
                         </div>
+
+                        {/* ===== اختيار المتغير (الحجم/النوع) ===== */}
+                        {hasVariants && (
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '10px', fontWeight: 700, fontSize: '0.95rem' }}>📐 اختر الحجم / النوع</label>
+                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    {product.variants!.map(v => (
+                                        <button
+                                            key={v.id}
+                                            onClick={() => setSelectedVariant(v)}
+                                            style={{
+                                                padding: '10px 20px',
+                                                borderRadius: '12px',
+                                                border: selectedVariant?.id === v.id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                                                background: selectedVariant?.id === v.id ? 'rgba(197, 160, 89, 0.15)' : 'var(--surface)',
+                                                color: selectedVariant?.id === v.id ? 'var(--accent)' : 'var(--text)',
+                                                fontWeight: 700,
+                                                cursor: v.stockQuantity > 0 ? 'pointer' : 'not-allowed',
+                                                opacity: v.stockQuantity > 0 ? 1 : 0.4,
+                                                transition: 'all 0.3s ease',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                minWidth: '80px',
+                                            }}
+                                            disabled={v.stockQuantity <= 0}
+                                        >
+                                            <span style={{ fontSize: '0.95rem' }}>{v.name}</span>
+                                            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{v.price.toFixed(0)} {s.currencySymbol}</span>
+                                            {v.stockQuantity <= 0 && <span style={{ fontSize: '0.7rem', color: 'var(--error)' }}>نفد</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <p className="description">{product.description}</p>
 
@@ -327,9 +385,9 @@ export default function ProductDetailPage() {
                         </div>
 
                         <div className="product-detail-actions">
-                            <button className="btn btn-primary btn-large" onClick={handleAddToCart} disabled={!product.inStock}>
+                            <button className="btn btn-primary btn-large" onClick={handleAddToCart} disabled={!product.inStock || (hasVariants && !selectedVariant)}>
                                 <ShoppingCart size={20} />
-                                {product.inStock ? `أضف للسلة - ${(finalPrice * quantity).toFixed(0)} ${s.currencySymbol}` : 'نفذت الكمية'}
+                                {!product.inStock ? 'نفذت الكمية' : (hasVariants && !selectedVariant) ? 'اختر الحجم أولاً' : `أضف للسلة - ${(activePrice * quantity).toFixed(0)} ${s.currencySymbol}`}
                             </button>
                             <button className={`btn ${isFavorite ? 'btn-danger' : 'btn-secondary'}`} onClick={handleToggleFavorite}>
                                 <Heart size={20} fill={isFavorite ? 'white' : 'none'} />

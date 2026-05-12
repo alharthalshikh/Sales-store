@@ -49,35 +49,42 @@ export default function CartSidebar() {
                             <p>أضف منتجات إلى سلتك للمتابعة</p>
                         </div>
                     ) : (
-                        state.cart.map(item => {
-                            const finalPrice = getFinalPrice(item.product);
+                        state.cart.map((item, idx) => {
+                            const finalPrice = getFinalPrice(item.product, item.selectedVariant?.price);
+                            const itemKey = `${item.product.id}-${item.selectedVariant?.id || 'none'}-${idx}`;
                             return (
-                                <div key={item.product.id} className="cart-item">
+                                <div key={itemKey} className="cart-item">
                                     <div className="cart-item-image">
                                         <img src={item.product.image} alt={item.product.name} />
                                     </div>
                                     <div className="cart-item-info">
                                         <div className="cart-item-name">{item.product.name}</div>
+                                        {item.selectedVariant && (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: 600, marginBottom: '4px' }}>
+                                                الحجم/النوع: {item.selectedVariant.name}
+                                            </div>
+                                        )}
                                         <div className="cart-item-price">
                                             {finalPrice.toFixed(2)} {s.currencySymbol}
                                         </div>
                                         <div className="cart-item-controls">
-                                            <button onClick={() => dispatch({ type: 'UPDATE_QUANTITY', productId: item.product.id, quantity: item.quantity - 1 })}>
+                                            <button onClick={() => dispatch({ type: 'UPDATE_QUANTITY', productId: item.product.id, variantId: item.selectedVariant?.id, quantity: item.quantity - 1 })}>
                                                 <Minus size={14} />
                                             </button>
                                             <span>{item.quantity}</span>
                                             <button
                                                 onClick={() => {
-                                                    if (item.quantity >= (item.product.stockQuantity || 0)) {
-                                                        showToast(`عذراً، هذه هي آخر ${item.product.stockQuantity} قطع متوفرة من هذا المنتج`, 'warning');
+                                                    const maxQty = item.selectedVariant?.stockQuantity ?? item.product.stockQuantity ?? 0;
+                                                    if (item.quantity >= maxQty) {
+                                                        showToast(`عذراً، هذه هي آخر ${maxQty} قطع متوفرة من هذا الخيار`, 'warning');
                                                     } else {
-                                                        dispatch({ type: 'UPDATE_QUANTITY', productId: item.product.id, quantity: item.quantity + 1 });
+                                                        dispatch({ type: 'UPDATE_QUANTITY', productId: item.product.id, variantId: item.selectedVariant?.id, quantity: item.quantity + 1 });
                                                     }
                                                 }}
                                             >
                                                 <Plus size={14} />
                                             </button>
-                                            <button className="cart-item-remove" onClick={() => dispatch({ type: 'REMOVE_FROM_CART', productId: item.product.id })}>
+                                            <button className="cart-item-remove" onClick={() => dispatch({ type: 'REMOVE_FROM_CART', productId: item.product.id, variantId: item.selectedVariant?.id })}>
                                                 <Trash2 size={14} />
                                             </button>
                                         </div>

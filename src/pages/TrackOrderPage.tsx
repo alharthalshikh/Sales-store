@@ -316,19 +316,27 @@ export default function TrackOrderPage() {
                                                     borderRadius: '12px',
                                                     padding: '14px',
                                                 }}>
-                                                    {order.items.map(item => (
-                                                        <div key={item.product.id} style={{
-                                                            display: 'flex', justifyContent: 'space-between',
-                                                            padding: '6px 0',
-                                                            borderBottom: '1px solid var(--border)',
-                                                            fontSize: '0.85rem',
-                                                        }}>
-                                                            <span>{item.product.name} ×{item.quantity}</span>
-                                                            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                                                                {(item.product.price * item.quantity).toFixed(0)} {s.currencySymbol}
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                    {order.items.map((item, idx) => {
+                                                        const itemPrice = item.selectedVariant?.price ?? item.product.price;
+                                                        return (
+                                                            <div key={`${item.product.id}-${idx}`} style={{
+                                                                display: 'flex', justifyContent: 'space-between',
+                                                                padding: '6px 0',
+                                                                borderBottom: '1px solid var(--border)',
+                                                                fontSize: '0.85rem',
+                                                            }}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                    <span>{item.product.name} ×{item.quantity}</span>
+                                                                    {item.selectedVariant && (
+                                                                        <span style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>({item.selectedVariant.name})</span>
+                                                                    )}
+                                                                </div>
+                                                                <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                                                                    {(itemPrice * item.quantity).toFixed(0)} {s.currencySymbol}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
 
                                                 {/* نقاط الولاء المكتسبة - تظهر فقط بعد التوصيل */}

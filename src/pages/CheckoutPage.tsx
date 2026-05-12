@@ -286,8 +286,9 @@ export default function CheckoutPage() {
         dispatch({ type: 'ADD_ORDER', order });
 
         const itemsList = state.cart.map(item => {
-            const price = getFinalPrice(item.product);
-            return `• ${item.product.name} × ${item.quantity} = ${(price * item.quantity).toFixed(0)} ${s.currencySymbol}`;
+            const price = getFinalPrice(item.product, item.selectedVariant?.price);
+            const variantText = item.selectedVariant ? ` (${item.selectedVariant.name})` : '';
+            return `• ${item.product.name}${variantText} × ${item.quantity} = ${(price * item.quantity).toFixed(0)} ${s.currencySymbol}`;
         }).join('\n');
 
         const couponLine = appliedCoupon ? `\n🎟️ كوبون: ${appliedCoupon.name} (-${couponDiscount.toFixed(0)} ${s.currencySymbol})` : '';
@@ -514,11 +515,17 @@ export default function CheckoutPage() {
                     </form>
                     <div className="checkout-summary">
                         <h3>🛒 ملخص الطلب</h3>
-                        {state.cart.map(item => {
-                            const price = getFinalPrice(item.product);
+                        {state.cart.map((item, idx) => {
+                            const price = getFinalPrice(item.product, item.selectedVariant?.price);
                             return (
-                                <div key={item.product.id} className="summary-item">
-                                    <div className="item-name"><span>{item.product.name}</span><span className="item-qty">×{item.quantity}</span></div>
+                                <div key={`${item.product.id}-${idx}`} className="summary-item">
+                                    <div className="item-name">
+                                        <span>{item.product.name}</span>
+                                        {item.selectedVariant && (
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--accent)', display: 'block' }}>({item.selectedVariant.name})</span>
+                                        )}
+                                        <span className="item-qty">×{item.quantity}</span>
+                                    </div>
                                     <span>{(price * item.quantity).toFixed(0)} {s.currencySymbol}</span>
                                 </div>
                             );

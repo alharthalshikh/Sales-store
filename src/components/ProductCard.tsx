@@ -140,9 +140,20 @@ export default function ProductCard({ product, index = 0 }: Props) {
                     <span className="rating-count">({product.reviewCount})</span>
                 </div>
                 <div className="product-card-price">
-                    <span className="price-current">{finalPrice.toFixed(0)} {settings.currencySymbol}</span>
-                    {product.originalPrice && (
-                        <span className="price-original">{product.originalPrice.toFixed(0)} {settings.currencySymbol}</span>
+                    {product.variants && product.variants.length > 0 ? (
+                        <>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>يبدأ من</span>
+                            <span className="price-current">
+                                {Math.min(...product.variants.map(v => v.price)).toFixed(0)} {settings.currencySymbol}
+                            </span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="price-current">{finalPrice.toFixed(0)} {settings.currencySymbol}</span>
+                            {product.originalPrice && (
+                                <span className="price-original">{product.originalPrice.toFixed(0)} {settings.currencySymbol}</span>
+                            )}
+                        </>
                     )}
                 </div>
                 <div className="product-card-footer">

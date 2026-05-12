@@ -41,21 +41,31 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
         case 'DELETE_CATEGORY':
             return { ...state, categories: state.categories.filter(c => c.id !== action.categoryId), products: state.products.filter(p => p.categoryId !== action.categoryId) };
         case 'ADD_TO_CART': {
-            const existing = state.cart.find(item => item.product.id === action.product.id);
+            const variantId = action.selectedVariant?.id;
+            const existing = state.cart.find(item =>
+                item.product.id === action.product.id &&
+                (item.selectedVariant?.id || undefined) === (variantId || undefined)
+            );
             if (existing) {
-                return { ...state, cart: state.cart.map(item => item.product.id === action.product.id ? { ...item, quantity: item.quantity + (action.quantity || 1) } : item) };
+                return {
+                    ...state, cart: state.cart.map(item =>
+                        item.product.id === action.product.id && (item.selectedVariant?.id || undefined) === (variantId || undefined)
+                            ? { ...item, quantity: item.quantity + (action.quantity || 1) }
+                            : item
+                    )
+                };
             }
-            return { ...state, cart: [...state.cart, { product: action.product, quantity: action.quantity || 1 }] };
+            return { ...state, cart: [...state.cart, { product: action.product, quantity: action.quantity || 1, selectedVariant: action.selectedVariant }] };
         }
         case 'REMOVE_FROM_CART':
-            return { ...state, cart: state.cart.filter(item => item.product.id !== action.productId) };
+            return { ...state, cart: state.cart.filter(item => !(item.product.id === action.productId && (item.selectedVariant?.id || undefined) === (action.variantId || undefined))) };
         case 'UPDATE_QUANTITY': {
-            if (action.quantity <= 0) return { ...state, cart: state.cart.filter(item => item.product.id !== action.productId) };
+            if (action.quantity <= 0) return { ...state, cart: state.cart.filter(item => !(item.product.id === action.productId && (item.selectedVariant?.id || undefined) === (action.variantId || undefined))) };
             return {
                 ...state,
                 cart: state.cart.map(item => {
-                    if (item.product.id === action.productId) {
-                        const maxQty = item.product.stockQuantity ?? 999;
+                    if (item.product.id === action.productId && (item.selectedVariant?.id || undefined) === (action.variantId || undefined)) {
+                        const maxQty = item.selectedVariant?.stockQuantity ?? item.product.stockQuantity ?? 999;
                         return { ...item, quantity: Math.min(action.quantity, maxQty) };
                     }
                     return item;
@@ -157,10 +167,24 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
             return { ...state, rewards: state.rewards.filter(r => r.id !== action.rewardId) };
         case 'DEDUCT_STOCK': {
             const updatedProducts = state.products.map(p => {
-                const deduction = action.items.find(item => item.productId === p.id);
-                if (!deduction) return p;
-                const newQty = Math.max(0, (p.stockQuantity || 0) - deduction.quantity);
-                return { ...p, stockQuantity: newQty, inStock: newQty > 0 };
+                const deductionsForThisProduct = action.items.filter(item => item.productId === p.id);
+                if (deductionsForThisProduct.length === 0) return p;
+
+                let newProduct = { ...p };
+                deductionsForThisProduct.forEach(deduction => {
+                    if (deduction.variantId && newProduct.variants) {
+                        newProduct.variants = newProduct.variants.map(v =>
+                            v.id === deduction.variantId
+                                ? { ...v, stockQuantity: Math.max(0, v.stockQuantity - deduction.quantity) }
+                                : v
+                        );
+                    } else {
+                        const newQty = Math.max(0, (newProduct.stockQuantity || 0) - deduction.quantity);
+                        newProduct.stockQuantity = newQty;
+                        newProduct.inStock = newQty > 0;
+                    }
+                });
+                return newProduct;
             });
             return { ...state, products: updatedProducts };
         }
@@ -284,16 +308,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         const order = state.orders.find(o => o.id === action.orderId);
                         if (order && order.status !== 'delivered' && order.items.length > 0) {
                             const deductionItems = order.items.map(item => ({
-                                productId: item.product.id, quantity: item.quantity,
+                                productId: item.product.id,
+                                quantity: item.quantity,
+                                variantId: item.selectedVariant?.id
                             }));
                             baseDispatch({ type: 'DEDUCT_STOCK', items: deductionItems });
                             for (const item of deductionItems) {
                                 const product = state.products.find(p => p.id === item.productId);
                                 if (product) {
-                                    const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
-                                    await updateDoc(doc(db, 'products', item.productId), {
-                                        stock_quantity: newQty, in_stock: newQty > 0,
-                                    });
+                                    if (item.variantId && product.variants) {
+                                        const updatedVariants = product.variants.map(v =>
+                                            v.id === item.variantId
+                                                ? { ...v, stockQuantity: Math.max(0, v.stockQuantity - item.quantity) }
+                                                : v
+                                        );
+                                        await updateDoc(doc(db, 'products', item.productId), { variants: updatedVariants });
+                                    } else {
+                                        const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
+                                        await updateDoc(doc(db, 'products', item.productId), {
+                                            stock_quantity: newQty, in_stock: newQty > 0,
+                                        });
+                                    }
                                 }
                             }
                         }
@@ -303,10 +338,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     for (const item of action.items) {
                         const product = state.products.find(p => p.id === item.productId);
                         if (product) {
-                            const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
-                            await updateDoc(doc(db, 'products', item.productId), {
-                                stock_quantity: newQty, in_stock: newQty > 0,
-                            });
+                            if (item.variantId && product.variants) {
+                                const updatedVariants = product.variants.map(v =>
+                                    v.id === item.variantId
+                                        ? { ...v, stockQuantity: Math.max(0, v.stockQuantity - item.quantity) }
+                                        : v
+                                );
+                                await updateDoc(doc(db, 'products', item.productId), { variants: updatedVariants });
+                            } else {
+                                const newQty = Math.max(0, (product.stockQuantity || 0) - item.quantity);
+                                await updateDoc(doc(db, 'products', item.productId), {
+                                    stock_quantity: newQty, in_stock: newQty > 0,
+                                });
+                            }
                         }
                     }
                     break;
@@ -390,19 +434,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'DELETE_BANNER':
                     await deleteDoc(doc(db, 'banners', action.bannerId));
                     break;
-                case 'CLEAR_USER_MESSAGES': {
-                    const msgsSnap = await getDocs(collection(db, 'messages'));
-                    const batch = writeBatch(db);
-                    msgsSnap.docs.forEach(d => {
-                        const data = d.data();
-                        if ((action.userId && data.user_id === action.userId) ||
-                            (action.phone && data.contact_info === action.phone)) {
-                            batch.delete(d.ref);
-                        }
-                    });
-                    await batch.commit();
-                    break;
-                }
+
                 case 'ADD_REWARD':
                 case 'UPDATE_REWARD':
                     await setDoc(doc(db, 'rewards', action.reward.id), rewardToDb(action.reward));
@@ -426,7 +458,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     break;
                 }
                 case 'CLEAR_ORDERS': await clearCollection('orders'); break;
-                case 'CLEAR_MESSAGES': await clearCollection('messages'); break;
+
                 case 'CLEAR_REVIEWS': await clearCollection('reviews'); break;
                 case 'CLEAR_CUSTOMERS': {
                     const snap = await getDocs(collection(db, 'users'));
@@ -894,7 +926,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, [state.settings]);
 
     const cartTotal = state.cart.reduce((sum, item) => {
-        const finalPrice = getFinalPriceCalc(item.product, state.discountRules);
+        const finalPrice = getFinalPriceCalc(item.product, state.discountRules, item.selectedVariant?.price);
         return sum + finalPrice * item.quantity;
     }, 0);
 
@@ -915,8 +947,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return Math.max(...applicableRules.map(r => r.type === 'percentage' ? r.value : (r.value / product.price) * 100));
     }
 
-    function getFinalPrice(product: Product): number {
-        return getFinalPriceCalc(product, state.discountRules);
+    function getFinalPrice(product: Product, variantPrice?: number): number {
+        return getFinalPriceCalc(product, state.discountRules, variantPrice);
     }
 
     return (

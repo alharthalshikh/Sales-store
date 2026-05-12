@@ -11,6 +11,14 @@ export interface Category {
     image: string;
 }
 
+export interface ProductVariant {
+    id: string;
+    name: string;       // مثال: "صغير", "وسط", "كبير"
+    price: number;
+    stockQuantity: number;
+    sku?: string;
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -32,11 +40,13 @@ export interface Product {
     reviewCount: number;
     tags?: string[];
     specifications?: Record<string, string>;
+    variants?: ProductVariant[]; // متغيرات المنتج (أحجام / أنواع)
 }
 
 export interface CartItem {
     product: Product;
     quantity: number;
+    selectedVariant?: ProductVariant; // المتغير المختار
 }
 
 export interface FavoriteItem {

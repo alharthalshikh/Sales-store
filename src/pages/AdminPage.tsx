@@ -31,7 +31,7 @@ const emptyProduct: Partial<Product> = {
     name: '', nameEn: '', description: '', price: 0, originalPrice: undefined,
     image: '', images: [], videoUrl: '', categoryId: '', weight: '', tags: [],
     specifications: {}, inStock: true, stockQuantity: 0, lowStockThreshold: 5,
-    featured: false, rating: 5, reviewCount: 0,
+    featured: false, rating: 5, reviewCount: 0, variants: [],
 };
 
 const emptyCategory: Partial<Category> = { name: '', nameEn: '', icon: '📦', image: '', description: '' };
@@ -272,6 +272,7 @@ export default function AdminPage() {
             featured: productForm.featured ?? false,
             rating: productForm.rating || 5,
             reviewCount: productForm.reviewCount || 0,
+            variants: (productForm.variants || []).filter(v => v.name && v.price > 0),
         };
 
         if (editingProductId) {
@@ -609,6 +610,74 @@ export default function AdminPage() {
                             <input type="checkbox" checked={productForm.featured ?? false} onChange={e => setProductForm(p => ({ ...p, featured: e.target.checked }))} />
                             ⭐ منتج مميز
                         </label>
+
+                        {/* ===== قسم المتغيرات (الأحجام/الأنواع) ===== */}
+                        <div style={{ background: 'var(--bg)', borderRadius: 12, padding: 16, border: '1px solid var(--border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <label style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent)' }}>📐 المتغيرات (أحجام / أنواع)</label>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-small"
+                                    onClick={() => {
+                                        const newVariant = { id: `VAR-${Date.now()}`, name: '', price: 0, stockQuantity: 0 };
+                                        setProductForm(p => ({ ...p, variants: [...(p.variants || []), newVariant] }));
+                                    }}
+                                >
+                                    <Plus size={14} /> إضافة متغير
+                                </button>
+                            </div>
+                            {(productForm.variants && productForm.variants.length > 0) ? (
+                                <div style={{ display: 'grid', gap: 10 }}>
+                                    {productForm.variants.map((v, idx) => (
+                                        <div key={v.id || idx} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'var(--surface)', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)' }}>
+                                            <input
+                                                value={v.name}
+                                                onChange={e => {
+                                                    const updated = [...(productForm.variants || [])];
+                                                    updated[idx] = { ...updated[idx], name: e.target.value };
+                                                    setProductForm(p => ({ ...p, variants: updated }));
+                                                }}
+                                                placeholder="الاسم (مثلاً: كبير)"
+                                                style={{ flex: 2, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9rem' }}
+                                            />
+                                            <input
+                                                type="number"
+                                                value={v.price || ''}
+                                                onChange={e => {
+                                                    const updated = [...(productForm.variants || [])];
+                                                    updated[idx] = { ...updated[idx], price: Number(e.target.value) };
+                                                    setProductForm(p => ({ ...p, variants: updated }));
+                                                }}
+                                                placeholder="السعر"
+                                                style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9rem' }}
+                                            />
+                                            <input
+                                                type="number"
+                                                value={v.stockQuantity || ''}
+                                                onChange={e => {
+                                                    const updated = [...(productForm.variants || [])];
+                                                    updated[idx] = { ...updated[idx], stockQuantity: Math.max(0, Number(e.target.value)) };
+                                                    setProductForm(p => ({ ...p, variants: updated }));
+                                                }}
+                                                placeholder="الكمية"
+                                                style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9rem' }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setProductForm(p => ({ ...p, variants: (p.variants || []).filter((_, i) => i !== idx) }));
+                                                }}
+                                                style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(244,67,54,0.1)', color: 'var(--error)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p style={{ fontSize: '0.82rem', color: 'var(--text-light)', textAlign: 'center', padding: '12px 0' }}>لا يوجد متغيرات - المنتج بسعر واحد</p>
+                            )}
+                        </div>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid var(--border)' }}>
                             <button className="btn btn-secondary" onClick={() => setShowProductModal(false)}>إلغاء</button>
                             <button className="btn btn-primary" onClick={saveProduct}><Save size={16} /> {editingProductId ? 'تحديث' : 'إضافة'}</button>
