@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Package, Tags, ShoppingBag, Users, MessageCircle, MessageSquare, BarChart3,
     Percent, Plus, Edit, Trash2, Check, X, LogOut, Save,
     Eye, EyeOff, Settings, Upload, Loader2, Star, FileText, Image, Send, Home, Gift, RefreshCw, Truck, Globe, Navigation,
-    Printer, Calendar, ChevronDown, Menu
+    Printer, Calendar, ChevronDown, Menu, ArrowRight
 } from 'lucide-react';
 import { useStore } from '../hooks/useStore';
 import { useAuth } from '../hooks/useAuth';
