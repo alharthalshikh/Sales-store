@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../hooks/useStore';
 import ProductCard from '../components/ProductCard';
+import { ArrowRight, ChevronLeft } from 'lucide-react';
 
 export default function FavoritesPage() {
     const { state, dispatch } = useStore();
+    const navigate = useNavigate();
     const favoriteProducts = state.products.filter(p => state.favorites.includes(p.id));
 
     useEffect(() => {
@@ -13,7 +15,24 @@ export default function FavoritesPage() {
 
     return (
         <div className="page">
-            <div className="container" style={{ paddingTop: '30px' }}>
+            <div className="container" style={{ paddingTop: '30px', paddingBottom: '60px' }}>
+                <button 
+                    onClick={() => navigate(-1)} 
+                    style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        background: 'none', 
+                        border: 'none', 
+                        color: 'var(--text-secondary)', 
+                        marginBottom: '20px', 
+                        cursor: 'pointer',
+                        fontWeight: 600
+                    }}
+                >
+                    <ArrowRight size={20} /> رجوع
+                </button>
+
                 <div className="section-header" style={{ marginBottom: '30px' }}>
                     <div className="section-badge">❤️ مفضلاتك</div>
                     <h2>قائمة المفضلة</h2>
@@ -31,8 +50,13 @@ export default function FavoritesPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <span style={{ color: 'var(--text-secondary)' }}>{favoriteProducts.length} منتج في المفضلة</span>
                         </div>
-                        <div className="products-grid" style={{ paddingBottom: '60px' }}>
+                        <div className="products-grid" style={{ paddingBottom: '30px' }}>
                             {favoriteProducts.map((product, i) => <ProductCard key={product.id} product={product} index={i} />)}
+                        </div>
+                        <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                            <Link to="/products" className="btn btn-secondary">
+                                <ArrowRight size={18} /> العودة للتسوق
+                            </Link>
                         </div>
                     </>
                 )}

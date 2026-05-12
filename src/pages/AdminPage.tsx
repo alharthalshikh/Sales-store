@@ -718,13 +718,25 @@ export default function AdminPage() {
                 )}
 
                 {adminProductCategory && (
-                    <button 
-                        className="btn btn-secondary btn-small" 
-                        onClick={() => setAdminProductCategory(null)}
-                        style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                        <X size={14} /> العودة لكل الأقسام
-                    </button>
+                    <div style={{ marginBottom: '20px' }}>
+                        <button 
+                            className="btn btn-secondary" 
+                            onClick={() => setAdminProductCategory(null)}
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '8px',
+                                background: 'var(--surface)',
+                                padding: '10px 20px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--accent)',
+                                color: 'var(--accent)',
+                                fontWeight: 700
+                            }}
+                        >
+                            <ArrowRight size={18} /> العودة لقائمة الأقسام
+                        </button>
+                    </div>
                 )}
 
                 <div className="admin-section-header">
