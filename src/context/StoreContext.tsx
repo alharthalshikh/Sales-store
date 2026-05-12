@@ -262,13 +262,16 @@ function storeReducer(state: StoreState, action: StoreAction): StoreState {
 export function StoreProvider({ children }: { children: ReactNode }) {
     const { user, isAdmin, userData } = useAuth();
     const [state, baseDispatch] = useReducer(storeReducer, initialState);
+    const stateRef = useRef(state);
+    stateRef.current = state;
     const firestoreInitialized = useRef(false);
 
     // ===== Dispatch مع مزامنة Firestore =====
     const dispatch = useCallback((action: StoreAction) => {
         baseDispatch(action);
-        syncToFirestore(action).catch(() => { });
-    }, [state, user]);
+        // نمرر الحالة الحالية من الـ ref لضمان عدم اعتماد useCallback على state مباشرة
+        syncToFirestore(action, stateRef.current).catch(() => { });
+    }, [user]); // الآن لا يعتمد على state
 
     // ===== دالة مساعدة لحذف كل مستندات مجموعة =====
     async function clearCollection(colName: string) {
@@ -279,7 +282,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     // ===== المزامنة مع Firestore (البيانات العامة) =====
-    async function syncToFirestore(action: StoreAction) {
+    async function syncToFirestore(action: StoreAction, currentState: StoreState) {
         if (!user) return;
         const isAdmin = (action as any).isAdmin || user.email === 'alharth465117@gmail.com';
         
@@ -305,7 +308,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'UPDATE_ORDER_STATUS':
                     await updateDoc(doc(db, 'orders', action.orderId), { status: action.status });
                     if (action.status === 'delivered') {
-                        const order = state.orders.find(o => o.id === action.orderId);
+                        const order = currentState.orders.find(o => o.id === action.orderId);
                         if (order && order.status !== 'delivered' && order.items.length > 0) {
                             const deductionItems = order.items.map(item => ({
                                 productId: item.product.id,
@@ -314,7 +317,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                             }));
                             baseDispatch({ type: 'DEDUCT_STOCK', items: deductionItems });
                             for (const item of deductionItems) {
-                                const product = state.products.find(p => p.id === item.productId);
+                                const product = currentState.products.find(p => p.id === item.productId);
                                 if (product) {
                                     if (item.variantId && product.variants) {
                                         const updatedVariants = product.variants.map(v =>
@@ -336,7 +339,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     break;
                 case 'DEDUCT_STOCK':
                     for (const item of action.items) {
-                        const product = state.products.find(p => p.id === item.productId);
+                        const product = currentState.products.find(p => p.id === item.productId);
                         if (product) {
                             if (item.variantId && product.variants) {
                                 const updatedVariants = product.variants.map(v =>
@@ -406,7 +409,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     await deleteDoc(doc(db, 'discount_rules', action.ruleId));
                     break;
                 case 'TOGGLE_DISCOUNT_RULE': {
-                    const currentRule = state.discountRules.find(r => r.id === action.ruleId);
+                    const currentRule = currentState.discountRules.find(r => r.id === action.ruleId);
                     if (currentRule) {
                         await updateDoc(doc(db, 'discount_rules', action.ruleId), { active: !currentRule.active });
                     }
@@ -423,7 +426,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     break;
                 }
                 case 'UPDATE_SETTINGS': {
-                    const dbSettings = settingsToDb({ ...state.settings, ...action.settings });
+                    const dbSettings = settingsToDb({ ...currentState.settings, ...action.settings });
                     await setDoc(doc(db, 'settings', 'main'), dbSettings);
                     break;
                 }
@@ -434,7 +437,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 case 'DELETE_BANNER':
                     await deleteDoc(doc(db, 'banners', action.bannerId));
                     break;
-
                 case 'ADD_REWARD':
                 case 'UPDATE_REWARD':
                     await setDoc(doc(db, 'rewards', action.reward.id), rewardToDb(action.reward));
@@ -458,7 +460,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     break;
                 }
                 case 'CLEAR_ORDERS': await clearCollection('orders'); break;
-
                 case 'CLEAR_REVIEWS': await clearCollection('reviews'); break;
                 case 'CLEAR_CUSTOMERS': {
                     const snap = await getDocs(collection(db, 'users'));
