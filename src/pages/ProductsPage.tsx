@@ -97,7 +97,20 @@ export default function ProductsPage() {
                         <option value="rating">⭐ التقييم</option>
                     </select>
                 </div>
-                {filteredProducts.length === 0 ? (
+                {(!state.isFirestoreLoaded && state.products.length === 0) ? (
+                    <div className="products-grid" style={{ paddingBottom: '60px' }}>
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="product-card animate-in" style={{ animationDelay: `${i * 0.08}s`, overflow: 'hidden' }}>
+                                <div style={{ width: '100%', aspectRatio: '1', background: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <div style={{ height: '16px', width: '75%', background: 'var(--surface)', borderRadius: '8px', animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)' }} />
+                                    <div style={{ height: '14px', width: '50%', background: 'var(--surface)', borderRadius: '8px', animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)' }} />
+                                    <div style={{ height: '20px', width: '35%', background: 'var(--surface)', borderRadius: '8px', marginTop: '4px', animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)' }} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : filteredProducts.length === 0 ? (
                     <div className="favorites-empty">
                         <div className="favorites-empty-icon">🔍</div>
                         <h3>لا توجد نتائج بحث</h3>

@@ -9,6 +9,7 @@ import ProductCard from '../components/ProductCard';
 export default function HomePage() {
     const { state } = useStore();
     const s = state.settings;
+    const isLoading = !state.isFirestoreLoaded && state.products.length === 0;
     const featuredProducts = state.products.filter(p => p.featured);
     const features = [
         { icon: <Award size={22} />, title: 'جودة عالية', desc: 'نضمن لك أعلى معايير الجودة' },
@@ -197,7 +198,17 @@ export default function HomePage() {
                         <p>اختر القسم الذي يناسبك وتصفح منتجاتنا المميزة</p>
                     </div>
                     <div className="categories-grid">
-                        {state.categories.map((cat, i) => (
+                        {isLoading ? (
+                            Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="category-card animate-in" style={{ animationDelay: `${i * 0.1}s` }}>
+                                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', borderRadius: '16px' }} />
+                                    <div className="category-card-overlay">
+                                        <div className="category-card-icon" style={{ opacity: 0.3 }}>📦</div>
+                                        <h3 style={{ background: 'rgba(255,255,255,0.15)', width: '60%', height: '20px', borderRadius: '8px', margin: '0 auto' }}>&nbsp;</h3>
+                                    </div>
+                                </div>
+                            ))
+                        ) : state.categories.map((cat, i) => (
                             <Link to={`/products?category=${cat.id}`} key={cat.id}>
                                 <div className="category-card animate-in" style={{ animationDelay: `${i * 0.1}s` }}>
                                     <img src={cat.image} alt={cat.name} loading="lazy" />
@@ -214,16 +225,27 @@ export default function HomePage() {
             </section>
 
             {/* Featured Products */}
-            {featuredProducts.length > 0 && (
+            {(featuredProducts.length > 0 || isLoading) && (
                 <section className="section" style={{ background: 'var(--bg-alt)' }}>
                     <div className="container">
                         <div className="section-header">
                             <div className="section-badge">⭐ الأكثر مبيعاً</div>
                             <h2>منتجات مميزة</h2>
-                            <p>أفضل المنتجات المختارة بعناية لك</p>
+                            <p>{isLoading ? 'جاري تحميل المنتجات...' : 'أفضل المنتجات المختارة بعناية لك'}</p>
                         </div>
                         <div className="products-grid">
-                            {featuredProducts.map((product, i) => (
+                            {isLoading ? (
+                                Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="product-card animate-in" style={{ animationDelay: `${i * 0.1}s`, overflow: 'hidden' }}>
+                                        <div style={{ width: '100%', aspectRatio: '1', background: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div style={{ height: '16px', width: '75%', background: 'var(--surface)', borderRadius: '8px', animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)' }} />
+                                            <div style={{ height: '14px', width: '50%', background: 'var(--surface)', borderRadius: '8px', animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)' }} />
+                                            <div style={{ height: '20px', width: '35%', background: 'var(--surface)', borderRadius: '8px', marginTop: '4px', animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(110deg, var(--surface) 30%, var(--bg) 50%, var(--surface) 70%)' }} />
+                                        </div>
+                                    </div>
+                                ))
+                            ) : featuredProducts.map((product, i) => (
                                 <ProductCard key={product.id} product={product} index={i} />
                             ))}
                         </div>

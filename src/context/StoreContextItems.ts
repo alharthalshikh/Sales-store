@@ -76,6 +76,7 @@ export interface StoreState {
     unreadFavoritesCount: number;
     rewards: LoyaltyReward[];
     isDataInitialized: boolean;
+    isFirestoreLoaded: boolean;
 }
 export type StoreAction =
     | { type: 'ADD_PRODUCT'; product: Product }
@@ -160,6 +161,7 @@ export const initialState: StoreState = {
     unreadFavoritesCount: 0,
     rewards: [],
     isDataInitialized: false,
+    isFirestoreLoaded: false,
 };
 
 // 🔄 دوال تحويل البيانات (Helpers)

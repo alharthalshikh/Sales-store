@@ -898,16 +898,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     if (localFavs) loadedState.favorites = JSON.parse(localFavs);
                 } catch (e) { }
                 loadedState.isDataInitialized = true;
+                loadedState.isFirestoreLoaded = true;
                 baseDispatch({ type: 'LOAD_STATE', state: loadedState });
             } else {
                 // لا توجد بيانات من السيرفر - نفتح الموقع بالبيانات المحلية
                 console.warn('⚠️ No server data available - using local cache');
-                baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
+                baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true, isFirestoreLoaded: true } });
             }
         } catch (err) {
             console.error('❌ Critical error loading from Firestore:', err);
             // حتى في حالة الخطأ الكامل، نفتح الموقع
-            baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
+            baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true, isFirestoreLoaded: true } });
         }
     }
 
