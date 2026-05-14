@@ -660,8 +660,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             localStorage.setItem('store-cache-version', CACHE_VERSION);
         }
 
-        loadCachedDataFirst();
+        // تحميل الكاش أولاً وتفعيل الموقع فوراً إذا وُجد
+        const hasCachedData = loadCachedDataFirst();
+        if (hasCachedData) {
+            // إذا وُجد كاش محلي، نُظهر الموقع فوراً ونحمّل Firebase في الخلفية
+            baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
+        }
+
+        // تحميل من Firebase في الخلفية (أو كأساسي إذا لم يوجد كاش)
         loadFromFirestore();
+
+        // ⏱️ حماية: إذا لم يتم التهيئة خلال 8 ثواني، نُظهر الموقع بأي بيانات متوفرة
+        const safetyTimeout = setTimeout(() => {
+            if (!stateRef.current.isDataInitialized) {
+                console.warn('⏱️ Firestore timeout - initializing with available data');
+                baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
+            }
+        }, 8000);
+
+        return () => clearTimeout(safetyTimeout);
     }, []);
 
     // ===== مراقبة التغييرات في الوقت الحقيقي عبر Firestore onSnapshot =====
@@ -790,7 +807,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, [user?.uid, isAdmin, userData?.phone, userData?.name, user === undefined]);
 
     // ✅ تحميل الكاش المحلي فوراً عند فتح التطبيق
-    function loadCachedDataFirst() {
+    // يرجع true إذا وُجدت بيانات مخزنة محلياً
+    function loadCachedDataFirst(): boolean {
         try {
             const saved = localStorage.getItem('store-state-v2');
             if (saved) {
@@ -817,9 +835,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                         if (localMessages) cachedState.messages = JSON.parse(localMessages);
                     } catch (e) { }
                     baseDispatch({ type: 'LOAD_STATE', state: cachedState });
+                    return true;
                 }
             }
         } catch (e) { }
+        return false;
     }
 
     async function loadFromFirestore() {
@@ -828,15 +848,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const loadedState: Partial<StoreState> = {};
             let serverHasData = false;
 
+            // ⏱️ إضافة timeout لكل طلب Firestore لمنع التعليق
+            const fetchWithTimeout = async (col: string, timeoutMs = 10000) => {
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+                    const snap = await getDocs(collection(db, col));
+                    clearTimeout(timeout);
+                    return { col, docs: snap.docs.map(d => ({ ...d.data(), id: d.id })) };
+                } catch (e) {
+                    console.warn(`⚠️ Failed to fetch collection: ${col}`, e);
+                    return { col, docs: null };
+                }
+            };
+
             const results = await Promise.all(
-                collections.map(async (col) => {
-                    try {
-                        const snap = await getDocs(collection(db, col));
-                        return { col, docs: snap.docs.map(d => ({ ...d.data(), id: d.id })) };
-                    } catch (e) {
-                        return { col, docs: null };
-                    }
-                })
+                collections.map(col => fetchWithTimeout(col))
             );
 
             results.forEach(({ col, docs }) => {
@@ -859,7 +886,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                     loadedState.settings = dbToSettings(settingsDoc.data());
                     serverHasData = true;
                 }
-            } catch (e) { }
+            } catch (e) {
+                console.warn('⚠️ Failed to fetch settings:', e);
+            }
 
             if (serverHasData) {
                 try {
@@ -871,9 +900,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 loadedState.isDataInitialized = true;
                 baseDispatch({ type: 'LOAD_STATE', state: loadedState });
             } else {
+                // لا توجد بيانات من السيرفر - نفتح الموقع بالبيانات المحلية
+                console.warn('⚠️ No server data available - using local cache');
                 baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
             }
         } catch (err) {
+            console.error('❌ Critical error loading from Firestore:', err);
+            // حتى في حالة الخطأ الكامل، نفتح الموقع
             baseDispatch({ type: 'LOAD_STATE', state: { isDataInitialized: true } });
         }
     }
